@@ -35,6 +35,39 @@ function getOptions(hostname, path, tags) {
 
 /**
  * @param {message} message A message object as defined in discord.js
+ * @param {string} text The text portion of the reply
+ * @param {string} imgUrl The complete URL to the desired image link
+ * @return {string} A shortened version of the URL via Google
+ */
+function sendGoogleShortenerRequest(message, text, imgUrl) {
+  let options = {
+    method: 'POST',
+    uri: config.google_url_shortener_url + "?key=" + config.google_url_shortener_key,
+    body: {
+      'longUrl': imgUrl
+    },
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    json: true
+  };
+
+  request(options)
+    .then(function (body) {
+      if (body.id != null) {
+        console.log('Shortened url to ' + body.id);
+        message.channel.sendMessage(text + body.id);
+      } else {
+        message.channel.sendMessage(text + imgUrl);
+      }
+    }).catch(function (err) {
+      console.log('Unable to shorten url, returning long form');
+      message.channel.sendMessage(text + imgUrl);
+    });
+}
+
+/**
+ * @param {message} message A message object as defined in discord.js
  * @param {string[]} cmds
  */
 function getDanbooru(message, cmds) {
@@ -46,7 +79,7 @@ function getDanbooru(message, cmds) {
       let arr_len = body.length;
       let selected_idx = Math.floor(Math.random() * (arr_len));
 
-      let tagsStr = 'tags: ' + tagList.split('+').join(', ');
+      let tagStr = 'tags: ' + tagList.split('+').join(', ');
       let imgUrl;
       if (body[selected_idx] != null) {
         imgUrl = config.danbooru_url + body[selected_idx].file_url;
@@ -55,9 +88,9 @@ function getDanbooru(message, cmds) {
         return console.error('Bad File Get at Index ' +
          selected_idx + ' on data:\n' + JSON.stringify(body));
       }
-      message.channel.sendMessage(decodeURIComponent(tagsStr) + '\n' + imgUrl);
+      sendGoogleShortenerRequest(message, decodeURIComponent(tagStr) + '\n', imgUrl);
   }).catch(function (err) {
-    return console.error('Request Failed');
+    return console.error('Request Failed: ' + err);
     message.channel.sendMessage('Request Failed. Try again.');
   });
 }
