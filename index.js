@@ -1,71 +1,67 @@
-const Discord = require('discord.js');
-const Fubuki = new Discord.Client();
+const DISCORD = require('discord.js');
+const FUBUKI = new DISCORD.Client();
 
-var config = require('./config');
-var request = require('request-promise');
+let config = require('./config');
+let booru = require('./booru.js');
+let remind = require('./remind.js');
 
-Fubuki.on('ready', () => {
-  console.log('I am ready!');
+FUBUKI.on('ready', () => {
+  console.log('Ready');
 });
 
-Fubuki.on('message', message => {
-  var cmds = message.content.toLowerCase().split(' ');
+FUBUKI.on('message', message => {
+  let cmds = message.content.toLowerCase().split(' ');
 
   switch (cmds[0]) {
     case '!ping':
-      console.log(cmds);
-      message.channel.sendMessage('pong');
+      message.channel.sendMessage('pong')
+        .then(console.log(cmds));
       break;
     case '!sleep':
-      message.channel.sendMessage('Bye!');
-      console.log('Bye!');
-      Fubuki.destroy();
-      process.exit(0);
+      message.channel.sendMessage('Logging off. Bye!')
+        .then(console.log('Logging off.'));
+      setTimeout(function(){
+        FUBUKI.destroy();
+        process.exit(0);
+      }, 500);
+      break;
     case '!booru':
-      var tagArr = [];
-      for (let val of cmds.slice(1)) {
-        tagArr.push(encodeURIComponent(val));
-      }
-      var tagList = String(tagArr.join('+'));
-
-      // Do NOT use qs: { ... }, it replaces '+' with '%20'
-      var options = {
-        method: 'GET',
-        uri: config.danbooru_auth + 'posts.json?tags=' + tagList,
-        headers: {
-          'User-Agent': 'Request-Promise'
-        },
-        json: true
-      }
-
-      console.log('Recieved request for: /posts.json?tags=' + tagList);
-
-      request(options)
-        .then(function (body) {
-          var arr_len = body.length;
-          var selected_idx = Math.floor(Math.random() * (arr_len));
-
-          var tagsStr = 'tags: '.concat(tagList.split('+').join(', '));
-          var imgUrl;
-          if (body[selected_idx] != null) {
-            imgUrl = config.danbooru_url.concat(body[selected_idx].file_url);
-          } else {
-            message.channel.sendMessage('Bad File Get');
-            return console.error('Bad File Get at Index ' + selected_idx + ' on data:\n' + JSON.stringify(body));
-          }
-          message.channel.sendMessage(tagsStr.concat('\n', imgUrl));
-      }).catch(function (err) {
-        return console.error('Request Failed');
-        message.channel.sendMessage('Request Failed. Try again.');
-      });
-
+      booru.getDanbooru(message, cmds);
+      break;
+    case '!b':
+      booru.getDanbooru(message, cmds);
+      break;
+    case '!bsafe':
+      let newCmd = cmds;
+      newCmd.push('rating:safe');
+      booru.getDanbooru(message, newCmd);
+      break;
+    case '!help':
+      let helpText = 'The following commands are avalible to this bot:\n\n' +
+        '!ping Reply with "pong" if the bot is still functional.\n\n' +
+        '!booru [tags] or !b [tags] Returns a link to a random Danbooru post' +
+          ' with the given tags. If you have more than one tag, seperate' +
+          ' them with a space.\n\n' +
+        '!bsafe [tags] Functions the same as !booru and !b, but appends' +
+        ' "rating:safe" to your request automatically.\n\n' +
+        '!help The bot will DM you this help text.\n\n' +
+        '!remindme [Message] in [number] [hour(s)/minute(s)] and [number] ' +
+          '[hour(s)/minute(s)] The bot will @ you after the specified time. ' +
+          'You can omit the "and" and everything after if desired. ' +
+          'Case does not matter.';
+      message.channel.sendMessage('Help is on the way! Check your DMs.')
+      message.author.sendMessage(helpText);
+      break;
+    case '!remindme':
+      remind.remindMe(message);
+      break;
     default:
   }
 });
 
-Fubuki.on('disconnected', function() {
+FUBUKI.on('disconnected', function() {
   console.log('Disconnected');
   process.exit(1);
 });
 
-Fubuki.login(config.discord_token);
+FUBUKI.login(config.discord_token);
