@@ -22,7 +22,11 @@ Fubuki.on('message', message => {
       Fubuki.destroy();
       process.exit(0);
     case '!booru':
-      var tagList = String(cmds.slice(1).join('+'));
+      var tagArr = [];
+      for (let val of cmds.slice(1)) {
+        tagArr.push(encodeURIComponent(val));
+      }
+      var tagList = String(tagArr.join('+'));
 
       // Do NOT use qs: { ... }, it replaces '+' with '%20'
       var options = {
@@ -34,10 +38,12 @@ Fubuki.on('message', message => {
         json: true
       }
 
+      console.log('Recieved request for: /posts.json?tags=' + tagList);
+
       request(options)
         .then(function (body) {
           var arr_len = body.length;
-          var selected_idx = Math.floor(Math.random() * (arr_len + 1));
+          var selected_idx = Math.floor(Math.random() * (arr_len));
 
           var tagsStr = 'tags: '.concat(tagList.split('+').join(', '));
           var imgUrl;
@@ -45,11 +51,12 @@ Fubuki.on('message', message => {
             imgUrl = config.danbooru_url.concat(body[selected_idx].file_url);
           } else {
             message.channel.sendMessage('Bad File Get');
-            return console.error('Bad File Get');
+            return console.error('Bad File Get at Index ' + selected_idx + ' on data:\n' + JSON.stringify(body));
           }
           message.channel.sendMessage(tagsStr.concat('\n', imgUrl));
       }).catch(function (err) {
-        return console.error('Request Failed: ', err);
+        return console.error('Request Failed');
+        message.channel.sendMessage('Request Failed. Try again.');
       });
 
     default:
