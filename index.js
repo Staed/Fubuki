@@ -22,16 +22,20 @@ Fubuki.on('message', message => {
       Fubuki.destroy();
       process.exit(0);
     case '!booru':
-      booru.getPost(message, cmds);
+      booru.getDanbooru(message, cmds);
       break;
     case '!b':
-      booru.getPost(message, cmds);
+      booru.getDanbooru(message, cmds);
       break;
-    case '!sb':
+    case '!bsafe':
       var newCmd = cmds;
       newCmd.push('rating:safe');
-      booru.getPost(message, newCmd);
+      booru.getDanbooru(message, newCmd);
       break;
+    case '!help':
+      var helpText = 'The following commands are avalible to this bot:\n!ping Reply with "pong" if the bot is still functional.\n!booru [tags] or !b [tags] Returns a link to random Danbooru post with the given tags. If you have more than one tag, seperate them with a space.\n!bsafe [tags] Functions the same as !booru and !b, but appends "rating:safe" to your request automatically.\n!help The bot will DM you this help text.';
+      message.channel.sendMessage('Help is on the way! Check your DMs.')
+      message.author.sendMessage(helpText);
     default:
   }
 });

@@ -1,25 +1,32 @@
 var config = require('./config');
 var request = require('request-promise');
 
+function cleanGet(cmds) {
+  var tagArr = [];
+  for (let val of cmds.slice(1)) {
+    tagArr.push(encodeURIComponent(val));
+  }
+  return String(tagArr.join('+'));
+}
+
+function getOptions(hostURL, endURL, tags) {
+  // Do NOT use qs: { ... }, it replaces '+' with '%20'
+  var options = {
+    method: 'GET',
+    uri: hostURL + endURL + tags,
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    json: true
+  }
+  console.log('Recieved request for: ' + endURL + tags);
+  return options;
+}
+
 module.exports = {
-  getPost: function (message, cmds) {
-    var tagArr = [];
-    for (let val of cmds.slice(1)) {
-      tagArr.push(encodeURIComponent(val));
-    }
-    var tagList = String(tagArr.join('+'));
-
-    // Do NOT use qs: { ... }, it replaces '+' with '%20'
-    var options = {
-      method: 'GET',
-      uri: config.danbooru_auth + 'posts.json?tags=' + tagList,
-      headers: {
-        'User-Agent': 'Request-Promise'
-      },
-      json: true
-    }
-
-    console.log('Recieved request for: /posts.json?tags=' + tagList);
+  getDanbooru: function (message, cmds) {
+    var tagList = cleanGet(cmds);
+    var options = getOptions(config.danbooru_auth, config.danbooru_get, tagList);
 
     request(options)
       .then(function (body) {
@@ -39,5 +46,11 @@ module.exports = {
       return console.error('Request Failed');
       message.channel.sendMessage('Request Failed. Try again.');
     });
+  },
+
+  getSafebooru: function(message, cmds) {
+    var tagList = cleanGet(cmds);
+    var options = getOptions(config.sbooru_url, config.sbooru_get, tagList);
+    message.channel.sendMessage('fix');
   }
 }
