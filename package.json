@@ -3,22 +3,22 @@
   "version": "0.0.1",
   "description": "A bot for the ages.",
   "author": {
-    "name": "Staed"
+    "name": "Staed",
   },
   "engines": {
-    "node": ">=7.0.0"
+    "node": ">=7.0.0",
   },
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
   },
   "dependencies": {
     "discord.js": "11.x",
     "request": "2.x",
-    "request-promise": "4.x"
+    "request-promise": "4.x",
   },
   "keywords": [
     "discord",
-    "bot"
+    "bot",
   ]
 }
