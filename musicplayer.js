@@ -46,7 +46,8 @@ function play(message) {
   YTDL.getInfo(nextVid, function(err, info) {
     if (err) console.log("No metainfo for the video found");
     else {
-      message.channel.sendMessage('Added **' + info.title + '** to the queue.');
+      message.channel.sendMessage('Added **' + info.title + '** (*' +
+        nextVid.replace('https://www.youtube.com/watch?v=','') + '*) to the queue.');
     }
   });
 
