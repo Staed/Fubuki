@@ -9,7 +9,7 @@ function remindMe(message) {
   }
   let matchedStrings = message.content.match(/\d+[\s]+((hour(s)?)|(minute(s)?))/ig);
   console.log('Reminder to ' + message.author.username
-    + ' in' + matchedStrings.join(' '));
+    + ' in ' + matchedStrings.join(' '));
 
   let remindTimer = 0;
   for (let elem of matchedStrings) {
@@ -29,7 +29,7 @@ function remindMe(message) {
   remindText = remindText.split(' ').slice(1).join(' ');
 
   message.channel.sendMessage('Okay, I\'ll remind you of that in '
-    + remindTimer + " minutes");
+    + remindTimer/60 + " minutes");
   setTimeout(function(){
     message.reply("reminding you: " + remindText)
       .then(msg => console.log('Sent a reminder to ' + msg.author.username))
