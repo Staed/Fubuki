@@ -66,6 +66,21 @@ FUBUKI.on('message', message => {
       break;
     case '!play':
       musicplayer.play(message);
+      message.delete()
+        .then(msg => console.log('Deleted message from ' + msg.author))
+        .catch(console.log("Failed to delete message: " + message.content));
+      break;
+    case '!connect':
+      musicplayer.connect(message.guild);
+      break;
+    case '!disconnect':
+      musicplayer.disconnect(message.guild);
+      break;
+    case '!remindme':
+      remind.remindMe(message);
+      break;
+    case '!play':
+      musicplayer.play(message);
       break;
     case '!connect':
       musicplayer.connect(message.guild);
