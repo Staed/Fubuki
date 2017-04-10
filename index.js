@@ -61,6 +61,18 @@ FUBUKI.on('message', message => {
     case '!disconnect':
       musicplayer.disconnect(message.guild);
       break;
+    case '!remindme':
+      remind.remindMe(message);
+      break;
+    case '!play':
+      musicplayer.play(message);
+      break;
+    case '!connect':
+      musicplayer.connect(message.guild);
+      break;
+    case '!disconnect':
+      musicplayer.disconnect(message.guild);
+      break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n' +
         '!ping Reply with "pong" if the bot is still functional.\n\n' +

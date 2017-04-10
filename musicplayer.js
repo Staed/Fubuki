@@ -69,6 +69,7 @@ function playQueued(nextVid, message) {
       connect(message.guild)
         .then(connection => {
           console.log('Now Playing: ' + nextVid.replace('https://www.youtube.com/watch?v=',''));
+
           YTDL.getInfo(nextVid, function(err,info) {
             if (err) console.log("No metainfo for the video found");
             else {
