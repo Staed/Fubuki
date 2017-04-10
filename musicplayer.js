@@ -1,5 +1,7 @@
 const YTDL = require('ytdl-core');
+
 let playlistQueue = [];
+let dispatcher = null;
 
 /**
  * @param {guild} guild The guild that the command orignated from
@@ -20,7 +22,7 @@ function connect(guild) {
   }
 }
 
-/**
+/** Ends the voice channel and clears the playlist queue
  * @param {guild} guild The guild that the command orignated from
  */
 function disconnect(guild) {
@@ -30,24 +32,70 @@ function disconnect(guild) {
   let voiceLeave = guild.voiceConnection.channel;
   voiceLeave.leave();
   console.log('Left the voice in ' + guild.name);
+  playlistQueue = [];
 }
 
 /**
  * @param {message} message A message object as defined in discord.js
  */
 function play(message) {
-  const streamOptions = { seek: 0, volume: 1 };
-  console.log('Playing from link: ' + message.content.split(' ')[1]);
-  const stream = YTDL(message.content.split(' ')[1], {filter: 'audioonly'});
+  let nextVid = message.content.split(' ')[1]
+  playlistQueue.push(nextVid);
+  console.log('Added ' + nextVid.replace('https://www.youtube.com/watch?v=','') + ' to the queue');
+  if (playlistQueue.length <= 1) {
+    playQueued(playlistQueue[0], message);
+  }
+}
 
-  if (message.guild.voiceConnection === null) {
-    connect(message.guild)
-      .then(connection => {
-        const dispatcher = connection.playStream(stream, streamOptions);
-      })
-      .catch(console.error);
-  } else {
-    const dispatcher = message.guild.voiceConnection.playStream(stream, streamOptions);
+/**
+ * @param {string} nextVid
+ * @param {message} message A message object as defined in discord.js
+ */
+function playQueued(nextVid, message) {
+  const STREAMOPTIONS = { seek: 0, volume: 1 };
+
+  if (nextVid != null) {
+    const STREAM = YTDL(nextVid, {filter: 'audioonly'});
+
+    if (message.guild.voiceConnection === null) {
+      connect(message.guild)
+        .then(connection => {
+          console.log('Now Playing: ' + nextVid.replace('https://www.youtube.com/watch?v=',''));
+          dispatcher = connection.playStream(STREAM, STREAMOPTIONS);
+
+          dispatcher.on('end', () => {
+              dispatcher = null;
+              playNext(message);
+            });
+
+            dispatcher.on('error', (err) => {
+              console.log(err)
+            });
+      });
+    } else {
+      dispatcher = message.guild.voiceConnection.playStream(STREAM, STREAMOPTIONS);
+
+      dispatcher.on('end', () => {
+        dispatcher = null;
+        playNext(message);
+      });
+
+      dispatcher.on('error', (err) => {
+        console.log(err)
+      });
+    }
+  }
+}
+
+/**
+ * @param {message} message A message object as defined in discord.js
+ */
+function playNext(message) {
+  playlistQueue.shift();
+  if (playlistQueue.length > 0) {
+    console.log("Now Playing: " + playlistQueue[0].replace('https://www.youtube.com/watch?v=',''));
+    console.log(playlistQueue);
+    playQueued(playlistQueue[0], message);
   }
 }
 
