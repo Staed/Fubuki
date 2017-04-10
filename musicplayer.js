@@ -41,7 +41,15 @@ function disconnect(guild) {
 function play(message) {
   let nextVid = message.content.split(' ')[1]
   playlistQueue.push(nextVid);
+
   console.log('Added ' + nextVid.replace('https://www.youtube.com/watch?v=','') + ' to the queue');
+  YTDL.getInfo(nextVid, function(err, info) {
+    if (err) console.log("No metainfo for the video found");
+    else {
+      message.channel.sendMessage('Added **' + info.title + '** to the queue.');
+    }
+  });
+
   if (playlistQueue.length <= 1) {
     playQueued(playlistQueue[0], message);
   }
@@ -61,18 +69,38 @@ function playQueued(nextVid, message) {
       connect(message.guild)
         .then(connection => {
           console.log('Now Playing: ' + nextVid.replace('https://www.youtube.com/watch?v=',''));
+          YTDL.getInfo(nextVid, function(err,info) {
+            if (err) console.log("No metainfo for the video found");
+            else {
+              let playbackInfo = ':play_pause: Playing **' + info.title +
+                '** [Length: ' + Math.floor(info.length_seconds/60) +
+                ':' + info.length_seconds%60 + ']';
+              message.channel.sendMessage(playbackInfo);
+            }
+          });
+
           dispatcher = connection.playStream(STREAM, STREAMOPTIONS);
 
           dispatcher.on('end', () => {
-              dispatcher = null;
-              playNext(message);
-            });
+            dispatcher = null;
+            playNext(message);
+          });
 
-            dispatcher.on('error', (err) => {
-              console.log(err)
-            });
-      });
+          dispatcher.on('error', (err) => {
+            console.log(err)
+          });
+        });
     } else {
+      YTDL.getInfo(nextVid, function(err,info) {
+        if (err) console.log("No metainfo for the video found");
+        else {
+          let playbackInfo = ':play_pause: Playing **' + info.title +
+            '** [Length: ' + Math.floor(info.length_seconds/60) +
+            ':' + info.length_seconds%60 + ']';
+          message.channel.sendMessage(playbackInfo);
+        }
+      });
+
       dispatcher = message.guild.voiceConnection.playStream(STREAM, STREAMOPTIONS);
 
       dispatcher.on('end', () => {

@@ -28,20 +28,32 @@ FUBUKI.on('message', message => {
       break;
     case '!booru':
       booru.getDanbooru(message, cmds);
+      message.delete()
+        .then(msg => console.log('Deleted message from ' + msg.author))
+        .catch(console.log("Failed to delete message: " + message.content));
       break;
     case '!b':
       booru.getDanbooru(message, cmds);
+      message.delete()
+        .then(msg => console.log('Deleted message from ' + msg.author))
+        .catch(console.log("Failed to delete message: " + message.content));
       break;
     case '!bsafe':
       let newCmd = cmds;
       newCmd.push('rating:safe');
       booru.getDanbooru(message, newCmd);
+      message.delete()
+        .then(msg => console.log('Deleted message from ' + msg.author))
+        .catch(console.log("Failed to delete message: " + message.content));
       break;
     case '!remindme':
       remind.remindMe(message);
       break;
     case '!play':
       musicplayer.play(message);
+      message.delete()
+        .then(msg => console.log('Deleted message from ' + msg.author))
+        .catch(console.log("Failed to delete message: " + message.content));
       break;
     case '!connect':
       musicplayer.connect(message.guild);
