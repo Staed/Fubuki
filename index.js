@@ -4,6 +4,7 @@ const FUBUKI = new DISCORD.Client();
 let config = require('./config');
 let booru = require('./booru.js');
 let remind = require('./remind.js');
+let musicplayer = require('./musicplayer.js');
 
 FUBUKI.on('ready', () => {
   console.log('Ready');
@@ -36,6 +37,18 @@ FUBUKI.on('message', message => {
       newCmd.push('rating:safe');
       booru.getDanbooru(message, newCmd);
       break;
+    case '!remindme':
+      remind.remindMe(message);
+      break;
+    case '!play':
+      musicplayer.play(message);
+      break;
+    case '!connect':
+      musicplayer.connect(message.guild);
+      break;
+    case '!disconnect':
+      musicplayer.disconnect(message.guild);
+      break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n' +
         '!ping Reply with "pong" if the bot is still functional.\n\n' +
@@ -51,9 +64,6 @@ FUBUKI.on('message', message => {
           'Case does not matter.';
       message.channel.sendMessage('Help is on the way! Check your DMs.')
       message.author.sendMessage(helpText);
-      break;
-    case '!remindme':
-      remind.remindMe(message);
       break;
     default:
   }
