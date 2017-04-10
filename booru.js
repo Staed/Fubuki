@@ -79,7 +79,7 @@ function getDanbooru(message, cmds) {
       let arr_len = body.length;
       let selected_idx = Math.floor(Math.random() * (arr_len));
 
-      let tagStr = 'tags: ' + tagList.split('+').join(', ');
+      let tagStr = '**Tags:** ' + tagList.split('+').join(', ');
       let imgUrl;
       if (body[selected_idx] != null) {
         imgUrl = config.danbooru_url + body[selected_idx].file_url;
