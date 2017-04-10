@@ -94,7 +94,6 @@ function playNext(message) {
   playlistQueue.shift();
   if (playlistQueue.length > 0) {
     console.log("Now Playing: " + playlistQueue[0].replace('https://www.youtube.com/watch?v=',''));
-    console.log(playlistQueue);
     playQueued(playlistQueue[0], message);
   }
 }
