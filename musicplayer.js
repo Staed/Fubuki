@@ -1,17 +1,24 @@
 const YTDL = require('ytdl-core');
+let config = require('./config');
 
+let lastPlayed = '';
 let playlistQueue = [];
 let dispatcher = null;
+let ytheader = /http(s?):\/\/(www.)?youtube.com\/watch\?v=/;
 
 /**
  * @param {guild} guild The guild that the command orignated from
  * @return {Promise<VoiceConnection>}
  */
 function connect(guild) {
-  let voiceJoin = guild.channels.find(val => val.type === 'voice');
+  let voiceJoin = guild.channels.find(val => val.name === config.default_channel);
   if (voiceJoin === null) {
-    console.log('ERR: Unable to find a voice channel.');
-    return;
+    voiceJoin = guild.channels.find(val => val.type === 'voice');
+
+    if (voiceJoin === null) {
+      console.log('ERR: Unable to find a voice channel.');
+      return;
+    }
   }
 
   if (voiceJoin.joinable === false) {
@@ -42,12 +49,13 @@ function play(message) {
   let nextVid = message.content.split(' ')[1]
   playlistQueue.push(nextVid);
 
-  console.log('Added ' + nextVid.replace('https://www.youtube.com/watch?v=','') + ' to the queue');
+  console.log('Added ' + nextVid.replace(ytheader,'') + ' to the queue');
   YTDL.getInfo(nextVid, function(err, info) {
     if (err) console.log("No metainfo for the video found");
     else {
-      message.channel.sendMessage('Added **' + info.title + '** (*' +
-        nextVid.replace('https://www.youtube.com/watch?v=','') + '*) to the queue.');
+      if (playlistQueue.length > 1) {
+        message.channel.sendMessage('Added **' + info.title + '** to the queue.');
+      }
     }
   });
 
@@ -69,18 +77,21 @@ function playQueued(nextVid, message) {
     if (message.guild.voiceConnection === null) {
       connect(message.guild)
         .then(connection => {
-          console.log('Now Playing: ' + nextVid.replace('https://www.youtube.com/watch?v=',''));
+          console.log('Now Playing: ' + nextVid.replace(ytheader,''));
 
           YTDL.getInfo(nextVid, function(err,info) {
             if (err) console.log("No metainfo for the video found");
             else {
               let playbackInfo = ':play_pause: Playing **' + info.title +
                 '** [Length: ' + Math.floor(info.length_seconds/60) +
-                ':' + info.length_seconds%60 + ']';
+                ':' + info.length_seconds%60 + ']\n(' +
+                nextVid.replace(ytheader,'') + ') ' +  info.thumbnail_url;
+
               message.channel.sendMessage(playbackInfo);
             }
           });
 
+          lastPlayed = nextVid;
           dispatcher = connection.playStream(STREAM, STREAMOPTIONS);
 
           dispatcher.on('end', () => {
@@ -98,7 +109,9 @@ function playQueued(nextVid, message) {
         else {
           let playbackInfo = ':play_pause: Playing **' + info.title +
             '** [Length: ' + Math.floor(info.length_seconds/60) +
-            ':' + info.length_seconds%60 + ']';
+            ':' + info.length_seconds%60 + ']\n(' +
+            nextVid.replace(ytheader,'') + ') ' + info.thumbnail_url;
+
           message.channel.sendMessage(playbackInfo);
         }
       });
@@ -123,9 +136,36 @@ function playQueued(nextVid, message) {
 function playNext(message) {
   playlistQueue.shift();
   if (playlistQueue.length > 0) {
-    console.log("Now Playing: " + playlistQueue[0].replace('https://www.youtube.com/watch?v=',''));
+    console.log("Now Playing: " + playlistQueue[0].replace(ytheader,''));
     playQueued(playlistQueue[0], message);
   }
 }
 
-module.exports = {connect, disconnect, play}
+/**
+ * @param {message}
+ */
+function skip(message) {
+  message.channel.sendMessage('Not implemented yet.');
+}
+
+/**
+ * @param {message}
+ */
+function repeat(message) {
+  message.content = '!play ' + lastPlayed;
+  if (playlistQueue.length === 0) {
+    play(message);
+  } else {
+    playlistQueue.push(lastPlayed);
+
+    console.log('Added ' + lastPlayed.replace(ytheader,'') + ' to the queue');
+    YTDL.getInfo(lastPlayed, function(err, info) {
+      if (err) console.log("No metainfo for the video found");
+      else {
+        message.channel.sendMessage('Added **' + info.title + '** to the queue.');
+      }
+    });
+  }
+}
+
+module.exports = {connect, disconnect, play, skip, repeat}
