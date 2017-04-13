@@ -109,6 +109,15 @@ FUBUKI.on('message', message => {
     case '!repeat':
       musicplayer.repeat(message);
       break;
+    case '!nowplaying':
+      musicplayer.nowPlaying(message.channel);
+      break;
+    case '!radio':
+      musicplayer.radio(message);
+      break;
+    case '!stopradio':
+      musicplayer.stopRadio();
+      break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n'
         '!ping Reply with "pong" if the bot is still functional.\n\n' +
