@@ -144,10 +144,12 @@ function playNext(message) {
 }
 
 /**
- * @param {message}
+ * @param {message} message
  */
 function skip(message) {
-  message.channel.sendMessage('Not implemented yet.');
+  console.log(playlistQueue[0].replace(ytHeader,'') + ' skipped');
+  message.channel.sendMessage('Skipping song.');
+  dispatcher.end();
 }
 
 /**
