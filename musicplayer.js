@@ -4,7 +4,8 @@ let config = require('./config');
 let lastPlayed = '';
 let playlistQueue = [];
 let dispatcher = null;
-let ytheader = /http(s?):\/\/(www.)?youtube.com\/watch\?v=/;
+let ytHeader = /http(s?):\/\/(www.)?youtube.com\/watch\?v=/;
+let playingRadio = false;
 
 /**
  * @param {guild} guild The guild that the command orignated from
@@ -40,6 +41,7 @@ function disconnect(guild) {
   voiceLeave.leave();
   console.log('Left the voice in ' + guild.name);
   playlistQueue = [];
+  playingRadio = false;
 }
 
 /**
@@ -49,7 +51,7 @@ function play(message) {
   let nextVid = message.content.split(' ')[1]
   playlistQueue.push(nextVid);
 
-  console.log('Added ' + nextVid.replace(ytheader,'') + ' to the queue');
+  console.log('Added ' + nextVid.replace(ytHeader,'') + ' to the queue');
   YTDL.getInfo(nextVid, function(err, info) {
     if (err) console.log("No metainfo for the video found");
     else {
@@ -77,7 +79,7 @@ function playQueued(nextVid, message) {
     if (message.guild.voiceConnection === null) {
       connect(message.guild)
         .then(connection => {
-          console.log('Now Playing: ' + nextVid.replace(ytheader,''));
+          console.log('Now Playing: ' + nextVid.replace(ytHeader,''));
 
           YTDL.getInfo(nextVid, function(err,info) {
             if (err) console.log("No metainfo for the video found");
@@ -85,7 +87,7 @@ function playQueued(nextVid, message) {
               let playbackInfo = ':play_pause: Playing **' + info.title +
                 '** [Length: ' + Math.floor(info.length_seconds/60) +
                 ':' + info.length_seconds%60 + ']\n(' +
-                nextVid.replace(ytheader,'') + ') ' +  info.thumbnail_url;
+                nextVid.replace(ytHeader,'') + ') ' +  info.thumbnail_url;
 
               message.channel.sendMessage(playbackInfo);
             }
@@ -110,7 +112,7 @@ function playQueued(nextVid, message) {
           let playbackInfo = ':play_pause: Playing **' + info.title +
             '** [Length: ' + Math.floor(info.length_seconds/60) +
             ':' + info.length_seconds%60 + ']\n(' +
-            nextVid.replace(ytheader,'') + ') ' + info.thumbnail_url;
+            nextVid.replace(ytHeader,'') + ') ' + info.thumbnail_url;
 
           message.channel.sendMessage(playbackInfo);
         }
@@ -136,16 +138,18 @@ function playQueued(nextVid, message) {
 function playNext(message) {
   playlistQueue.shift();
   if (playlistQueue.length > 0) {
-    console.log("Now Playing: " + playlistQueue[0].replace(ytheader,''));
+    console.log("Now Playing: " + playlistQueue[0].replace(ytHeader,''));
     playQueued(playlistQueue[0], message);
   }
 }
 
 /**
- * @param {message}
+ * @param {message} message
  */
 function skip(message) {
-  message.channel.sendMessage('Not implemented yet.');
+  console.log(playlistQueue[0].replace(ytHeader,'') + ' skipped');
+  message.channel.sendMessage('Skipping song.');
+  dispatcher.end();
 }
 
 /**
@@ -158,7 +162,7 @@ function repeat(message) {
   } else {
     playlistQueue.push(lastPlayed);
 
-    console.log('Added ' + lastPlayed.replace(ytheader,'') + ' to the queue');
+    console.log('Added ' + lastPlayed.replace(ytHeader,'') + ' to the queue');
     YTDL.getInfo(lastPlayed, function(err, info) {
       if (err) console.log("No metainfo for the video found");
       else {
@@ -168,4 +172,83 @@ function repeat(message) {
   }
 }
 
-module.exports = {connect, disconnect, play, skip, repeat}
+/**
+ * @param {channel} channel The channel from which the message orignated
+ */
+function nowPlaying(channel) {
+  if (playlistQueue.length === 0) {
+    channel.sendMessage('Nothing is being played but my heart.');
+  } else {
+    YTDL.getInfo(playlistQueue[0], function(err, info) {
+      if (err) console.log("No metainfo for the video found");
+      else {
+        let playbackInfo = 'Now playing **' + info.title + '**\n(' +
+          playlistQueue[0].replace(ytHeader,'') + ') ' + info.thumbnail_url;
+        channel.sendMessage(playbackInfo);
+      }
+    });
+  }
+}
+
+/**
+ * @param {message} message
+ */
+function radio(message) {
+  playingRadio = true;
+  repeatRadio(message);
+}
+
+function repeatRadio(message) {
+  if (playingRadio === false) return;
+  let radioLink = message.content.split(' ')[1];
+  if (radioLink === null) return; // Handle non-youtube radios here eventually
+
+  const STREAMOPTIONS = { seek: 0, volume: 1 };
+  const STREAM = YTDL(radioLink, {filter: 'audioonly'});
+
+  if (message.guild.voiceConnection === null) {
+    connect(message.guild)
+      .then(connection => {
+        dispatcher = connection.playStream(STREAM, STREAMOPTIONS);
+
+        /**STREAM.on('progress', (chunk_length, downloaded, download_length) => {
+          if (downloaded / chunk_length > 0.8) repeatRadio(message);
+        });*/
+
+        dispatcher.on('end', () => {
+          dispatcher = null;
+          repeatRadio(message);
+        });
+
+        dispatcher.on('error', (err) => {
+          console.log(err)
+        });
+      });
+  } else {
+    dispatcher = message.guild.voiceConnection.playStream(STREAM, STREAMOPTIONS);
+
+    dispatcher.on('end', () => {
+      dispatcher = null;
+      repeatRadio(message);
+    });
+
+    dispatcher.on('error', (err) => {
+      console.log(err)
+    });
+  }
+}
+
+function stopRadio() {
+  playingRadio = false;
+}
+
+module.exports = {
+  connect,
+  disconnect,
+  play,
+  skip,
+  repeat,
+  nowPlaying,
+  radio,
+  stopRadio,
+}

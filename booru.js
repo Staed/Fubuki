@@ -42,7 +42,7 @@ function getOptions(hostname, path, tags) {
 function sendGoogleShortenerRequest(message, text, imgUrl) {
   let options = {
     method: 'POST',
-    uri: config.google_url_shortener_url + "?key=" + config.google_url_shortener_key,
+    uri: config.google_url_shortener_url + "?key=" + config.google_api_key,
     body: {
       'longUrl': imgUrl
     },
