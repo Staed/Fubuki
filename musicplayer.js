@@ -211,6 +211,10 @@ function repeatRadio(message) {
       .then(connection => {
         dispatcher = connection.playStream(STREAM, STREAMOPTIONS);
 
+        /**STREAM.on('progress', (chunk_length, downloaded, download_length) => {
+          if (downloaded / chunk_length > 0.8) repeatRadio(message);
+        });*/
+
         dispatcher.on('end', () => {
           dispatcher = null;
           repeatRadio(message);

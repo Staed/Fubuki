@@ -106,6 +106,9 @@ FUBUKI.on('message', message => {
       break;
     case '!radio':
       musicplayer.radio(message);
+      message.delete()
+        .then(msg => console.log('Deleted message from ' + msg.author))
+        .catch(console.log("Failed to delete message: " + message.content));
       break;
     case '!stopradio':
       musicplayer.stopRadio();
