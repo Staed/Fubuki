@@ -88,7 +88,12 @@ function getDanbooru(message, cmds) {
         return console.error('Bad File Get at Index ' +
          selected_idx + ' on data:\n' + JSON.stringify(body));
       }
-      sendGoogleShortenerRequest(message, decodeURIComponent(tagStr) + '\n', imgUrl);
+
+      if (config.use_shortener === true) {
+        sendGoogleShortenerRequest(message, decodeURIComponent(tagStr) + '\n', imgUrl);
+      } else {
+        message.channel.sendMessage(decodeURIComponent(tagStr) + '\n' + imgUrl);
+      }
   }).catch(function (err) {
     return console.error('Request Failed: ' + err);
     message.channel.sendMessage('Request Failed. Try again.');
