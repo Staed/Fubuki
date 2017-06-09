@@ -37,6 +37,7 @@ FUBUKI.on('message', message => {
       let newCmd = cmds;
       newCmd.push('rating:safe');
       booru.getDanbooru(message, newCmd);
+      message.delete()
       break;
     case '!remindme':
       remind.remindMe(message);
