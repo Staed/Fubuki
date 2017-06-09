@@ -21,6 +21,7 @@ FUBUKI.on('message', message => {
     case '!sleep':
       message.channel.sendMessage('Logging off. Bye!')
         .then(console.log('Logging off.'));
+      message.delete();
       setTimeout(function(){
         FUBUKI.destroy();
         process.exit(0);
@@ -28,16 +29,17 @@ FUBUKI.on('message', message => {
       break;
     case '!booru':
       booru.getDanbooru(message, cmds);
+      message.delete();
       break;
     case '!b':
       booru.getDanbooru(message, cmds);
-      message.delete()
+      message.delete();
       break;
     case '!bsafe':
       let newCmd = cmds;
       newCmd.push('rating:safe');
       booru.getDanbooru(message, newCmd);
-      message.delete()
+      message.delete();
       break;
     case '!remindme':
       remind.remindMe(message);
@@ -47,48 +49,6 @@ FUBUKI.on('message', message => {
       message.delete()
         .then(msg => console.log('Deleted message from ' + msg.author))
         .catch(console.log("Failed to delete message: " + message.content));
-      break;
-    case '!connect':
-      musicplayer.connect(message.guild);
-      break;
-    case '!disconnect':
-      musicplayer.disconnect(message.guild);
-      break;
-    case '!remindme':
-      remind.remindMe(message);
-      break;
-    case '!play':
-      musicplayer.play(message);
-      message.delete()
-        .then(msg => console.log('Deleted message from ' + msg.author))
-        .catch(console.log("Failed to delete message: " + message.content));
-      break;
-    case '!connect':
-      musicplayer.connect(message.guild);
-      break;
-    case '!disconnect':
-      musicplayer.disconnect(message.guild);
-      break;
-    case '!remindme':
-      remind.remindMe(message);
-      break;
-    case '!play':
-      musicplayer.play(message);
-      message.delete()
-        .then(msg => console.log('Deleted message from ' + msg.author))
-        .catch(console.log("Failed to delete message: " + message.content));
-      break;
-    case '!connect':
-      musicplayer.connect(message.guild);
-      break;
-    case '!disconnect':
-      musicplayer.disconnect(message.guild);
-      break;
-    case '!remindme':
-      remind.remindMe(message);
-      break;
-    case '!play':
-      musicplayer.play(message);
       break;
     case '!connect':
       musicplayer.connect(message.guild);
