@@ -35,11 +35,11 @@ let request = require('request-promise');
 
 /**
  * @param {message} message A message object as defined in discord.js
- * @param {string[]} cmds An array of commands created by splitting by spaces
+ * @param {string} user A string representation of the user either as an id or username
  */
- function getAvatar(message, cmds) {
-   console.log("Looking for: " + cmds[1])
-   let memberName = cmds[1].toLowerCase();
+ function getAvatar(message, user) {
+   console.log("Looking for: " + user)
+   let memberName = user.toLowerCase();
    let avatarURL = '';
 
    if (memberName.charAt(1) == '@') {
@@ -65,9 +65,38 @@ let request = require('request-promise');
      avatarURL = avatarURL.replace('jpg', 'png');
      message.channel.sendMessage(avatarURL);
    } else {
-     console.log("Could not find member " + cmds[1]);
+     console.log("Could not find member " + user);
      message.channel.sendMessage("I couldn't find that member!");
    }
  }
 
- module.exports = {urbanDefine, getAvatar};
+ /**
+  *  @param {message} message  A message object as defined in discord.js
+  *  @param {string[]} cmds Strings that need to be joined and rated
+  * Consider replacing the random function with another thing, maybe tied to stocks or time
+  */
+ function rate(message, cmds) {
+   let str = message.content.split(' ').slice(1).join(' ');
+   let rating = rateAlgorithm(str);
+
+   if (str.toLowerCase() == 'staed') {
+     message.channel.sendMessage("Staeds are great! I'll give Staed a 10/10!");
+     console.log('Rated a Staed');
+   } else if (str.toLowerCase() == 'sawai') {
+     message.channel.sendMessage("Sawais are :put_litter_in_its_place: I'll give Sawai a 0/10");
+     console.log('Rated a Sawai');
+   } else {
+     console.log('Rated ' + str + ' as ' + rating + '/10');
+     message.channel.sendMessage("I'd rate " + str + ' ' + rating + '/10');
+   }
+ }
+
+/**
+ * @param {string} text A string containing the thing to be rated
+ * @return {int} A number between 1 and 10 inclusive
+ */
+ function rateAlgorithm(text) {
+   return Math.floor(Math.random() * 10 + 1);
+ }
+
+ module.exports = {urbanDefine, getAvatar, rate};
