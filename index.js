@@ -5,6 +5,7 @@ let config = require('./config');
 let booru = require('./booru.js');
 let remind = require('./remind.js');
 let musicplayer = require('./musicplayer.js');
+let misc = require('./misc.js');
 
 FUBUKI.on('ready', () => {
   console.log('Ready');
@@ -73,6 +74,9 @@ FUBUKI.on('message', message => {
       break;
     case '!stopradio':
       musicplayer.stopRadio();
+      break;
+    case '!urban':
+      misc.urbanDefine(message, cmds);
       break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n'
