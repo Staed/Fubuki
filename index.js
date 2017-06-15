@@ -79,7 +79,7 @@ FUBUKI.on('message', message => {
       misc.urbanDefine(message, cmds);
       break;
     case '!help':
-      let helpText = 'The following commands are avalible to this bot:\n\n'
+      let helpText = 'The following commands are avalible to this bot:\n\n' +
         '!ping Reply with "pong" if the bot is still functional.\n\n' +
         '!booru [tags] or !b [tags] Returns a link to a random Danbooru post' +
           ' with the given tags. If you have more than one tag, seperate' +
@@ -90,16 +90,18 @@ FUBUKI.on('message', message => {
         '!remindme [Message] in [number] [hour(s)/minute(s)] and [number] ' +
           '[hour(s)/minute(s)] The bot will @ you after the specified time. ' +
           'You can omit the "and" and everything after if desired. ' +
-          'Case does not matter.' +
-        '!connect The bot joins the music channel.' +
+          'Case does not matter.\n\n' +
+        '!connect The bot joins the music channel.\n\n' +
         '!play [youtube link] The bot plays the selected link in ' +
           'the music channel. If it was already playing something ' +
-          'your link is added to the queue.' +
+          'your link is added to the queue.\n\n' +
         '!disconnect The bot leaves the music channel ' +
-          'and clears the queue of links to playback.' +
-        '!skip Skips the current song in the queue.' +
+          'and clears the queue of links to playback.\n\n' +
+        '!skip Skips the current song in the queue.\n\n' +
         '!repeat Repeats the current song being played. This will be ' +
-          'the last song played if no songs are currently playing.';
+          'the last song played if no songs are currently playing.\n\n' +
+        '!urban [term] Replies with the definition and example from Urban ' +
+          'Dictionary if it exists\n\n';
       message.channel.sendMessage('Help is on the way! Check your DMs.')
       message.author.sendMessage(helpText);
       break;
