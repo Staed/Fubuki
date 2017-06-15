@@ -78,6 +78,9 @@ FUBUKI.on('message', message => {
     case '!urban':
       misc.urbanDefine(message, cmds);
       break;
+    case '!a':
+      misc.getAvatar(message, cmds);
+      break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n' +
         '!ping Reply with "pong" if the bot is still functional.\n\n' +
@@ -101,7 +104,8 @@ FUBUKI.on('message', message => {
         '!repeat Repeats the current song being played. This will be ' +
           'the last song played if no songs are currently playing.\n\n' +
         '!urban [term] Replies with the definition and example from Urban ' +
-          'Dictionary if it exists\n\n';
+          'Dictionary if it exists\n\n' +
+        '!a [username] Returns a link to the user\'s avatar\n\n';
       message.channel.sendMessage('Help is on the way! Check your DMs.')
       message.author.sendMessage(helpText);
       break;
