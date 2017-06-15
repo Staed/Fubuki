@@ -79,7 +79,10 @@ FUBUKI.on('message', message => {
       misc.urbanDefine(message, cmds);
       break;
     case '!a':
-      misc.getAvatar(message, cmds);
+      misc.getAvatar(message, cmds[1]);
+      break;
+    case '!rate':
+      misc.rate(message, cmds);
       break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n' +
@@ -105,7 +108,8 @@ FUBUKI.on('message', message => {
           'the last song played if no songs are currently playing.\n\n' +
         '!urban [term] Replies with the definition and example from Urban ' +
           'Dictionary if it exists\n\n' +
-        '!a [username] Returns a link to the user\'s avatar\n\n';
+        '!a [username] Returns a link to the user\'s avatar\n\n' +
+        '!rate [text] Gives a rating from 1 to 10';
       message.channel.sendMessage('Help is on the way! Check your DMs.')
       message.author.sendMessage(helpText);
       break;
