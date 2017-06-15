@@ -22,7 +22,7 @@ let request = require('request-promise');
       .then(function (body) {
         if (body.result_type == "no_results") {
           console.log('No results for ' + term);
-          message.channel.sendMessage("There are no results for: " + term.Replace('+', ' '));
+          message.channel.sendMessage("There are no results for: " + term.replace('+', ' '));
         } else {
           let firstDef = body.list[0];
           message.channel.sendMessage('**' + cmds.slice(1).join(' ') + ':**\n' + firstDef.definition + '\n' + firstDef.example);
