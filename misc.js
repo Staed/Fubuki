@@ -33,4 +33,41 @@ let request = require('request-promise');
       });
  }
 
- module.exports = {urbanDefine};
+/**
+ * @param {message} message A message object as defined in discord.js
+ * @param {string[]} cmds An array of commands created by splitting by spaces
+ */
+ function getAvatar(message, cmds) {
+   console.log("Looking for: " + cmds[1])
+   let memberName = cmds[1].toLowerCase();
+   let avatarURL = '';
+
+   if (memberName.charAt(1) == '@') {
+     let obj = message.guild.members.get(memberName.substring(2, memberName.length - 1));
+     if (typeof obj !== 'undefined') {
+      avatarURL = obj.user.displayAvatarURL;
+      console.log("Found " + obj.displayName + "'s avatar at " + avatarURL);
+     }
+   } else {
+     for (var [id, memberObj] of message.guild.members) {
+       let displayName = memberObj.displayName.toLowerCase();
+       let username = memberObj.user.username.toLowerCase();
+
+       if (displayName == memberName || username == memberName) {
+        avatarURL = memberObj.user.displayAvatarURL;
+        console.log("Found " + memberObj.displayName + "'s avatar at " + avatarURL);
+        break;
+       }
+     }
+   }
+
+   if (avatarURL) {
+     avatarURL = avatarURL.replace('jpg', 'png');
+     message.channel.sendMessage(avatarURL);
+   } else {
+     console.log("Could not find member " + cmds[1]);
+     message.channel.sendMessage("I couldn't find that member!");
+   }
+ }
+
+ module.exports = {urbanDefine, getAvatar};
