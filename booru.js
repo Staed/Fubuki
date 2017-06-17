@@ -82,8 +82,7 @@ function getDanbooru(message, cmds) {
   request(options)
     .then(function (body) {
       let selected_idx = Math.floor(Math.random() * (body.length));
-
-      let tagStr = '**Tags:** ' + tagList.split('+').join(', ');
+      let tagStr = '**Tags:** ' + cleanGet(cmds).split('+').join(', ');
       let imgUrl;
 
       if (body != null && body[selected_idx] != null) {
