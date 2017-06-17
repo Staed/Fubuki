@@ -74,7 +74,7 @@ function sendGoogleShortenerRequest(message, text, imgUrl) {
  */
 function getDanbooru(message, cmds) {
   let tagList = cleanGet(cmds);
-  tagList.push("-id:" + prev_img_id);
+  tagList += "-id:" + prev_img_id;
   let options = getOptions(config.danbooru_auth, config.danbooru_get, tagList);
 
   request(options)
