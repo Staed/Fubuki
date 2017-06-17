@@ -99,6 +99,40 @@ let request = require('request-promise');
    }
  }
 
+ /**
+  *  @param {message} message  A message object as defined in discord.js
+  *  @param {string[]} cmds Strings containing an action and potential extra parameters
+  */
+ function quote(message, cmds) {
+   if (cmds[1] == 'add') {
+     let user = cmds[2];
+     let member;
+
+     if (user.charAt(1) == '@') {
+       let obj = message.guild.members.get(memberName.substring(2, memberName.length - 1));
+       if (typeof obj !== 'undefined') {
+         member = obj;
+       }
+     } else {
+       for (var [id, member_obj] of message.guild.members) {
+         let display_name = member_obj.displayName.toLowerCase();
+         let username = member_obj.user.username.toLowerCase();
+         if (display_name == user || username == user) {
+           member = member_obj;
+         }
+       }
+     }
+
+     let fs = require('fs');
+     let ws = fs.createWriteStream('quotes.txt');
+     ws.on('finish', function () {
+       console.log('Quote added');
+     });
+     ws.write(member.displayName + ' - ' + member.lastMessage);
+     ws.end();
+   }
+ }
+
 /**
  * @param {string} text A string containing the thing to be rated
  * @return {int} A number between 1 and 10 inclusive

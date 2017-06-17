@@ -90,6 +90,9 @@ FUBUKI.on('message', message => {
     case '!rate':
       misc.rate(message, cmds);
       break;
+    case '!quote':
+      misc.quote(message, cmds);
+      break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n' +
         '!ping Reply with "pong" if the bot is still functional.\n\n' +
