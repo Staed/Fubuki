@@ -22,14 +22,17 @@ let request = require('request-promise');
       .then(function (body) {
         if (body.result_type == "no_results") {
           console.log('No results for ' + term);
-          message.channel.sendMessage("There are no results for: " + term.replace('+', ' '));
+          message.channel.send("There are no results for: " + term.replace('+', ' '))
+            .catch( reason => { console.log("Rejected Urban Null Promise for " + reason); });
         } else {
           let firstDef = body.list[0];
-          message.channel.sendMessage('**' + cmds.slice(1).join(' ') + ':**\n' + firstDef.definition + '\n' + firstDef.example);
+          message.channel.send('**' + cmds.slice(1).join(' ') + ':**\n' + firstDef.definition + '\n' + firstDef.example)
+            .catch( reason => { console.log("Rejected Urban Definition Promise for " + reason); });
         }
       }).catch(function (err) {
         console.log('Error accessing Urban Dictionary\'s API:\n' + err);
-        message.channel.sendMessage("Error accessing Urban Dictionary");
+        message.channel.send("Error accessing Urban Dictionary")
+          .catch( reason => { console.log("Rejected Urban Reject Promise for " + reason); });
       });
  }
 
@@ -63,10 +66,12 @@ let request = require('request-promise');
 
    if (avatarURL) {
      avatarURL = avatarURL.replace('jpg', 'png');
-     message.channel.sendMessage(avatarURL);
+     message.channel.send(avatarURL)
+      .catch( reason => { console.log("Rejected Avatar Result for " + reason); });
    } else {
      console.log("Could not find member " + user);
-     message.channel.sendMessage("I couldn't find that member!");
+     message.channel.send("I couldn't find that member!")
+      .catch( reason => { console.log("Rejected Avatar Null Promise for " + reason); });
    }
  }
 
@@ -80,14 +85,17 @@ let request = require('request-promise');
    let rating = rateAlgorithm(str);
 
    if (str.toLowerCase() == 'staed') {
-     message.channel.sendMessage("Staeds are great! I'll give Staed a 10/10!");
+     message.channel.send("Staeds are great! I'll give Staed a 10/10!")
+      .catch( reason => { console.log("Rejected Rate Staed Promise for " + reason); });
      console.log('Rated a Staed');
    } else if (str.toLowerCase() == 'sawai') {
-     message.channel.sendMessage("Sawais are :put_litter_in_its_place: I'll give Sawai a 0/10");
+     message.channel.send("Sawais are :put_litter_in_its_place: I'll give Sawai a 0/10")
+      .catch( reason => { console.log("Rejected Rate Sawai Promise for " + reason); });
      console.log('Rated a Sawai');
    } else {
      console.log('Rated ' + str + ' as ' + rating + '/10');
-     message.channel.sendMessage("I'd rate " + str + ' ' + rating + '/10');
+     message.channel.send("I'd rate " + str + ' ' + rating + '/10')
+      .catch( reason => { console.log("Rejected Rate Response Promise for " + reason); });
    }
  }
 
