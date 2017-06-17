@@ -74,6 +74,7 @@ function sendGoogleShortenerRequest(message, text, imgUrl) {
  */
 function getDanbooru(message, cmds) {
   let tagList = cleanGet(cmds);
+  tagList.push("-id:" + prev_img_id);
   let options = getOptions(config.danbooru_auth, config.danbooru_get, tagList);
 
   request(options)
@@ -85,6 +86,7 @@ function getDanbooru(message, cmds) {
 
       if (body != null && body[selected_idx] != null) {
         imgUrl = config.danbooru_url + body[selected_idx].file_url;
+        prev_img_id = body[selected_idx].id;
       } else {
         message.channel.send('No picture found')
           .catch( reason => { console.log("Rejected Booru Null Promise for " + reason); });
