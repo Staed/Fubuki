@@ -69,12 +69,13 @@ function sendGoogleShortenerRequest(message, text, imgUrl) {
 }
 
 /**
- * @param {message} message A message object as defined in discord.jsoo
+ * @param {message} message A message object as defined in discord.js
  * @param {string[]} cmds
  */
 function getDanbooru(message, cmds) {
   let tagList = cleanGet(cmds);
   if (prev_img_id != null) {
+      tagList += "-id:" + prev_img_id;
   }
   let options = getOptions(config.danbooru_auth, config.danbooru_get, tagList);
 
