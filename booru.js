@@ -24,9 +24,6 @@ function getOptions(hostname, path, tags) {
   let options = {
     method: 'GET',
     uri: hostname + path + tags,
-    headers: {
-      'User-Agent': 'Request-Promise'
-    },
     json: true,
   }
   console.log('Recieved request for: ' + path + tags);
@@ -56,13 +53,17 @@ function sendGoogleShortenerRequest(message, text, imgUrl) {
     .then(function (body) {
       if (body.id != null) {
         console.log('Shortened url to ' + body.id);
-        message.channel.sendMessage(text + body.id);
+        message.channel.send(text + body.id)
+          .catch( reason => { console.log("Rejected Google Short URL for " + reason); });
       } else {
-        message.channel.sendMessage(text + imgUrl);
+        message.channel.send(text + imgUrl)
+          .catch( reason => { console.log("Rejected Google Full URL Promise for " + reason); });
       }
-    }).catch(function (err) {
+    })
+    .catch(function (err) {
       console.log('Unable to shorten url, returning long form');
-      message.channel.sendMessage(text + imgUrl);
+      message.channel.send(text + imgUrl)
+        .catch( reason => { console.log("Rejected Google Initial Promise for " + reason); });
     });
 }
 
@@ -84,7 +85,8 @@ function getDanbooru(message, cmds) {
       if (body[selected_idx] != null) {
         imgUrl = config.danbooru_url + body[selected_idx].file_url;
       } else {
-        message.channel.sendMessage('No picture found');
+        message.channel.send('No picture found')
+          .catch( reason => { console.log("Rejected Booru Null Promise for " + reason); });
         return console.error('Bad File Get at Index ' +
          selected_idx + ' on data:\n' + JSON.stringify(body));
       }
@@ -92,11 +94,14 @@ function getDanbooru(message, cmds) {
       if (config.use_shortener === true) {
         sendGoogleShortenerRequest(message, decodeURIComponent(tagStr) + '\n', imgUrl);
       } else {
-        message.channel.sendMessage(decodeURIComponent(tagStr) + '\n' + imgUrl);
+        message.channel.send(decodeURIComponent(tagStr) + '\n' + imgUrl)
+          .catch( reason => { console.log("Rejected Booru URL Promise for " + reason); });
       }
-  }).catch(function (err) {
+  })
+  .catch(function (err) {
     return console.error('Request Failed: ' + err);
-    message.channel.sendMessage('Request Failed. Try again.');
+    message.channel.send('Request Failed. Try again.')
+      .catch( reason => { console.log("Rejected Booru Reject Promise for " + reason); });
   });
 }
 
@@ -107,7 +112,8 @@ function getDanbooru(message, cmds) {
 function getSafebooru(message, cmds) {
   let tagList = cleanGet(cmds);
   let options = getOptions(config.sbooru_url, config.sbooru_get, tagList);
-  message.channel.sendMessage('fixme');
+  message.channel.send('fixme')
+    .catch( reason => { console.log("Rejected SafeBooru Msg Promise for " + reason); });
 }
 
 module.exports = {getDanbooru, getSafebooru};

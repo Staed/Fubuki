@@ -16,13 +16,16 @@ FUBUKI.on('message', message => {
 
   switch (cmds[0]) {
     case '!ping':
-      message.channel.sendMessage('pong')
-        .then(console.log(cmds));
+      message.channel.send('pong')
+        .then(console.log(cmds))
+        .catch( reason => { console.log("Rejected Pong Promise for " + reason); });
       break;
     case '!sleep':
-      message.channel.sendMessage('Logging off. Bye!')
-        .then(console.log('Logging off.'));
-      message.delete();
+      message.channel.send('Logging off. Bye!')
+        .then(console.log('Logging off.'))
+        .catch( reason => { console.log("Rejected Sleep Promise for " + reason); });
+      message.delete()
+        .catch( reason => { console.log("Rejected Sleepe Delete Promise for " + reason); });
       setTimeout(function(){
         FUBUKI.destroy();
         process.exit(0);
@@ -30,17 +33,20 @@ FUBUKI.on('message', message => {
       break;
     case '!booru':
       booru.getDanbooru(message, cmds);
-      message.delete();
+      message.delete()
+        .catch( reason => { console.log("Rejected Booru Delete Promise for " + reason); });
       break;
     case '!b':
       booru.getDanbooru(message, cmds);
-      message.delete();
+      message.delete()
+        .catch( reason => { console.log("Rejected Booru Delete Promise for " + reason); });
       break;
     case '!bsafe':
       let newCmd = cmds;
       newCmd.push('rating:safe');
       booru.getDanbooru(message, newCmd);
-      message.delete();
+      message.delete()
+        .catch( reason => { console.log("Rejected Booru Delete Promise for " + reason); });
       break;
     case '!remindme':
       remind.remindMe(message);
@@ -49,7 +55,7 @@ FUBUKI.on('message', message => {
       musicplayer.play(message);
       message.delete()
         .then(msg => console.log('Deleted message from ' + msg.author))
-        .catch(console.log("Failed to delete message: " + message.content));
+        .catch( reason => { console.log("Rejected Music Delete Promise for " + reason); });
       break;
     case '!connect':
       musicplayer.connect(message.guild);
@@ -70,7 +76,7 @@ FUBUKI.on('message', message => {
       musicplayer.radio(message);
       message.delete()
         .then(msg => console.log('Deleted message from ' + msg.author))
-        .catch(console.log("Failed to delete message: " + message.content));
+        .catch( reason => { console.log("Rejected Radio Delete Promise for " + reason); });
       break;
     case '!stopradio':
       musicplayer.stopRadio();
@@ -110,8 +116,10 @@ FUBUKI.on('message', message => {
           'Dictionary if it exists\n\n' +
         '!a [username] Returns a link to the user\'s avatar\n\n' +
         '!rate [text] Gives a rating from 1 to 10';
-      message.channel.sendMessage('Help is on the way! Check your DMs.')
-      message.author.sendMessage(helpText);
+      message.channel.send('Help is on the way! Check your DMs.')
+        .catch( reason => { console.log("Rejected Help Public Promise for " + reason); });
+      message.author.send(helpText)
+        .catch( reason => { console.log("Rejected Help DM Promise for " + reason); });
       break;
     default:
   }
