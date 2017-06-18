@@ -54,7 +54,7 @@ FUBUKI.on('message', message => {
     case '!play':
       musicplayer.play(message);
       message.delete()
-        .then(msg => console.log('Deleted message from ' + msg.author))
+        .then(msg => { console.log('Deleted message from ' + msg.author); })
         .catch( reason => { console.log("Rejected Music Delete Promise for " + reason); });
       break;
     case '!connect':
@@ -75,7 +75,7 @@ FUBUKI.on('message', message => {
     case '!radio':
       musicplayer.radio(message);
       message.delete()
-        .then(msg => console.log('Deleted message from ' + msg.author))
+        .then(msg => { console.log('Deleted message from ' + msg.author); })
         .catch( reason => { console.log("Rejected Radio Delete Promise for " + reason); });
       break;
     case '!stopradio':
@@ -91,7 +91,15 @@ FUBUKI.on('message', message => {
       misc.rate(message, cmds);
       break;
     case '!quote':
-      misc.quote(message, cmds);
+      if (cmds[2] !== "fubuki") {
+        misc.quote(message, cmds);
+      } else {
+        message.channel.send("I can't add a quote from myself dummy!")
+          .then(function () {
+            console.log("Refused to add self quote");
+          })
+          .catch( reason => { console.log("Rejected Quote Fubuki Promise for " + reason); });
+      }
       break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n' +
