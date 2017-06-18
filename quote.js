@@ -2,12 +2,13 @@ let config = require('./config');
 let fs = require('fs');
 
 /**
+ *  @param {string} capital_name The username with proper capitalization
  *  @param {Collection<Snowflake, GuildMember>} members  A Map of [user id : member object]
  *  @param {int} index The index in cmds where this @mention is found
  *  @param {string[]} cmds Strings containing an action and potential extra parameters
  *  @return {string[2]} The display name and username of that user in that order
  */
-function matchMention(members, index, cmds) {
+function matchMention(capital_name, members, index, cmds) {
   let user = cmds[index];
   let display_name = '';
   let username = '';
@@ -16,22 +17,11 @@ function matchMention(members, index, cmds) {
     if (/<@\d+>/.test(user)) {
       let user_id = user.substring(2, user.length - 1);
       let member = members.get(user_id);
-      display_name = member.display_name.toLowerCase();
+      display_name = member.display_name;
       username = member.user.username;
     } else {
-      display_name = cmds.slice(index).join(' ');
+      display_name = capital_name;
       username = display_name;
-    }
-  }
-
-  if (!display_name) {
-    for (let [id, obj] of members) {
-      let d_name = obj.displayName.toLowerCase();
-      let u_name = obj.user.username.toLowerCase();
-
-      if (d_name == user || u_name == user) {
-        name = [d_name, u_name];
-      }
     }
   }
 
@@ -86,51 +76,159 @@ function addQuote(channel, name, message) {
   }
 }
 
-/**
- *  @param {message} message  A message object as defined in discord.js
- *  @param {string[]} cmds Strings containing an action and potential extra parameters
- */
-function quote(message, cmds) {
-  if (cmds[1] == 'add') {
-    let user = cmds.slice(2).join(' ');
-    let name = matchMention(message.guild.members, 2, cmds);
+function addUserQuote(message, cmds) {
+  let user = cmds.slice(2).join(' ');
+  let name = matchMention(message.author.username, message.guild.members, 2, cmds);
 
-    let last_message;
-    message.channel.fetchMessages({ limit: 100})
-     .then( messages => {
-       for (let [key, value] of messages.entries()) {
-         if (value.author.username == name[1] && /!quote( add)?.*/i.test(value.content) == false) {
-           last_message = value;
-           break;
-         }
+  let last_message;
+  message.channel.fetchMessages({ limit: 100})
+   .then( messages => {
+     for (let [key, value] of messages.entries()) {
+       if (value.author.username.toLowerCase() == name[1].toLowerCase() && /!quote( add)?.*/i.test(value.content) == false) {
+         last_message = value;
+         break;
        }
+     }
 
-       addQuote(message.channel, name[0], last_message);
-     })
-     .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
-  } else {
+     addQuote(message.channel, name[0], last_message);
+   })
+   .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
+}
+
+function searchQuote(message, cmds) {
+  fs.readFile("quotes.txt", function(err, text) {
+    if (err) {
+      console.log("Failed to read Quote file: " + err);
+      message.channel.send("Failed to find a quote")
+       .catch( reason => { console.log("Rejected Quote SearchRead Promise for " + reason); });
+      return;
+    }
+
+    let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
+    let quotes = [];
+
+    let name = matchMention(message.author.username, message.guild.members, 1, cmds);
+
+    for (let i = 0; i < entries.length - 1; i += 2) {
+      if (cmds.length < 2 || name[0] == entries[i].toLowerCase()) {
+        let entry = [entries[i], entries[i+1]];
+        quotes.push(entry);
+      }
+    }
+
+    selectRandomQuote(message.channel, quotes);
+  });
+}
+
+/**
+ * @param {message} message  A message object as defined in discord.js
+ * @param {PermissionResolvable} permission The permission level required
+ * @return {boolean} Whether or not the user has the permission
+ */
+function checkPermission(message, permission) {
+  let admins = [];
+  for (let [id, role] of message.guild.roles.entries()) {
+    if (role.hasPermission(permission)) {
+      admins = role.members;
+      break;
+    }
+  }
+
+  for (let [id, member] of admins.entries()) {
+    if (member.id == message.author.id) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function listQuotes(message, cmds) {
+  if (checkPermission(message, 'ADMINISTRATOR')) {
     fs.readFile("quotes.txt", function(err, text) {
       if (err) {
         console.log("Failed to read Quote file: " + err);
         message.channel.send("Failed to find a quote")
-         .catch( reason => { console.log("Rejected Quote Read Promise for " + reason); });
+         .catch( reason => { console.log("Rejected Quote ListRead Promise for " + reason); });
+        return;
+      }
+
+      let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
+      let list = '';
+      for (let i = 0; i < entries.length - 1; i += 2) {
+          list += i/2 + ". " +  entries[i] + '\t - \"' + entries[i+1] + "\"\n";
+      }
+      message.channel.send(list)
+        .catch( reason => { console.log("Rejected Quote ListPrint Promise for " + reason); });
+    });
+  } else {
+    message.channel.send("You don't have the permission to do this!")
+      .catch( reason => { console.log("Rejected Quote ListFail Promise for " + reason); });
+  }
+}
+
+function deleteQuote(message, cmds) {
+  if (checkPermission(message, 'ADMINISTRATOR')) {
+    let new_entries = '';
+
+    fs.readFile("quotes.txt", function(err, text) {
+      if (err) {
+        console.log("Failed to read Quote file: " + err);
+        message.channel.send("Failed to find a quote")
+         .catch( reason => { console.log("Rejected Quote DeleteRead Promise for " + reason); });
         return;
       }
 
       let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
       let quotes = [];
-
-      let name = matchMention(message.guild.members, 1, cmds);
-
       for (let i = 0; i < entries.length - 1; i += 2) {
-        if (cmds.length < 2 || name[0] == entries[i].toLowerCase()) {
-          let entry = [entries[i], entries[i+1]];
-          quotes.push(entry);
+        if(i == 2*cmds[2]) {
+          continue;
         }
+        let entry = [entries[i], entries[i+1]];
+        quotes.push(entry);
       }
 
-      selectRandomQuote(message.channel, quotes);
+      for (let [name, text] of quotes) {
+        new_entries += name + ":::" + text + "\n"
+      }
+      new_entries = new_entries.substring(0, new_entries.length);
+
+      fs.writeFile("quotes.txt", new_entries, function(err) {
+        if (err) {
+          console.log("Failed to write Quote file: " + err);
+          message.channel.send("Failed to write to file")
+            .catch( reason => { console.log("Rejected Quote DeleteWrite Promise for " + reason); });
+        }
+      });
     });
+
+    message.channel.send("Quote #" + cmds[2] + " deleted")
+      .catch( reason => { console.log("Rejected Quote DelSuccess Promise for " + reason); });
+  } else {
+    message.channel.send("You don't have the permission to do this!")
+      .catch( reason => { console.log("Rejected Quote DelFail Promise for " + reason); });
+  }
+}
+
+/**
+ *  @param {message} message  A message object as defined in discord.js
+ *  @param {string[]} cmds Strings containing an action and potential extra parameters
+ */
+function quote(message, cmds) {
+  switch (cmds[1]) {
+    case 'add':
+      addUserQuote(message, cmds);
+      break;
+    case 'list':
+      listQuotes(message, cmds);
+      break;
+    case 'del':
+      deleteQuote(message, cmds);
+      break;
+    default: {
+      searchQuote(message, cmds);
+    }
   }
 }
 
