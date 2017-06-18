@@ -16,7 +16,7 @@ function matchMention(members, index, capital_cmds) {
     if (/<@\d+>/.test(user)) {
       let user_id = user.substring(2, user.length - 1);
       let member = members.get(user_id);
-      display_name = member.display_name.toLowerCase();
+      display_name = member.display_name;
       username = member.user.username;
     } else {
       display_name = capital_cmds.slice(index).join(' ');
@@ -26,17 +26,6 @@ function matchMention(members, index, capital_cmds) {
           username = obj.user.username;
           break;
         }
-      }
-    }
-  }
-
-  if (!display_name) {
-    for (let [id, obj] of members) {
-      let d_name = obj.displayName.toLowerCase();
-      let u_name = obj.user.username.toLowerCase();
-
-      if (d_name == user || u_name == user) {
-        name = [d_name, u_name];
       }
     }
   }
@@ -179,9 +168,14 @@ function listQuotes(message, cmds) {
         return;
       }
 
-       addQuote(message.channel, name[0], last_message);
-     })
-     .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
+      let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
+      let list = '';
+      for (let i = 0; i < entries.length - 1; i += 2) {
+          list += i/2 + ". " +  entries[i] + '\t - \"' + entries[i+1] + "\"\n";
+      }
+      message.channel.send(list)
+        .catch( reason => { console.log("Rejected Quote ListPrint Promise for " + reason); });
+    });
   } else {
     message.channel.send("You don't have the permission to do this!")
       .catch( reason => { console.log("Rejected Quote ListFail Promise for " + reason); });
@@ -200,23 +194,32 @@ function deleteQuote(message, cmds) {
       if (err) {
         console.log("Failed to read Quote file: " + err);
         message.channel.send("Failed to find a quote")
-         .catch( reason => { console.log("Rejected Quote Read Promise for " + reason); });
+         .catch( reason => { console.log("Rejected Quote DeleteRead Promise for " + reason); });
         return;
       }
 
       let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
       let quotes = [];
-
-      let name = matchMention(message.guild.members, 1, cmds);
-
       for (let i = 0; i < entries.length - 1; i += 2) {
-        if (cmds.length < 2 || name[0] == entries[i].toLowerCase()) {
-          let entry = [entries[i], entries[i+1]];
-          quotes.push(entry);
+        if(i == 2*cmds[2]) {
+          continue;
         }
+        let entry = [entries[i], entries[i+1]];
+        quotes.push(entry);
       }
 
-      selectRandomQuote(message.channel, quotes);
+      for (let [name, text] of quotes) {
+        new_entries += name + ":::" + text + "\n"
+      }
+      new_entries = new_entries.substring(0, new_entries.length);
+
+      fs.writeFile("quotes.txt", new_entries, function(err) {
+        if (err) {
+          console.log("Failed to write Quote file: " + err);
+          message.channel.send("Failed to write to file")
+            .catch( reason => { console.log("Rejected Quote DeleteWrite Promise for " + reason); });
+        }
+      });
     });
 
     message.channel.send("Quote #" + cmds[2] + " deleted")
