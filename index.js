@@ -93,7 +93,7 @@ FUBUKI.on('message', message => {
       break;
     case '!quote':
       if (cmds[1] !== 'fubuki' && cmds[2] !== "fubuki") {
-        quote.quote(message, cmds);
+        quote.quote(message, cmds, message.content.split(' '));
       } else {
         message.channel.send("I can't quote from myself dummy!")
           .then(function () {

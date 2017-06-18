@@ -2,26 +2,31 @@ let config = require('./config');
 let fs = require('fs');
 
 /**
- *  @param {string} capital_name The username with proper capitalization
  *  @param {Collection<Snowflake, GuildMember>} members  A Map of [user id : member object]
  *  @param {int} index The index in cmds where this @mention is found
- *  @param {string[]} cmds Strings containing an action and potential extra parameters
+ *  @param {string[]} capital_cmds Strings containing an action and potential extra parameters
  *  @return {string[2]} The display name and username of that user in that order
  */
-function matchMention(capital_name, members, index, cmds) {
-  let user = cmds[index];
+function matchMention(members, index, capital_cmds) {
+  let user = capital_cmds[index];
   let display_name = '';
   let username = '';
 
-  if (cmds.length > index) {
+  if (capital_cmds.length > index) {
     if (/<@\d+>/.test(user)) {
       let user_id = user.substring(2, user.length - 1);
       let member = members.get(user_id);
       display_name = member.display_name;
       username = member.user.username;
     } else {
-      display_name = capital_name;
-      username = display_name;
+      display_name = capital_cmds.slice(index).join(' ');
+
+      for (let [id, obj] of members) {
+        if (obj.displayName.toLowerCase() == display_name.toLowerCase()) {
+          username = obj.user.username;
+          break;
+        }
+      }
     }
   }
 
@@ -76,10 +81,12 @@ function addQuote(channel, name, message) {
   }
 }
 
-function addUserQuote(message, cmds) {
-  let user = cmds.slice(2).join(' ');
-  let name = matchMention(message.author.username, message.guild.members, 2, cmds);
-
+/**
+ *  @param {message} message  A message object as defined in discord.js
+ *  @param {string[]} capital_cmds  Capitalized strings containing an action and potential extra parameters
+ */
+function addUserQuote(message, capital_cmds) {
+  let name = matchMention(message.guild.members, 2, capital_cmds);
   let last_message;
   message.channel.fetchMessages({ limit: 100})
    .then( messages => {
@@ -95,7 +102,11 @@ function addUserQuote(message, cmds) {
    .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
 }
 
-function searchQuote(message, cmds) {
+/**
+ *  @param {message} message  A message object as defined in discord.js
+ *  @param {string[]} capital_cmds  Capitalized strings containing an action and potential extra parameters
+ */
+function searchQuote(message, capital_cmds) {
   fs.readFile("quotes.txt", function(err, text) {
     if (err) {
       console.log("Failed to read Quote file: " + err);
@@ -107,10 +118,10 @@ function searchQuote(message, cmds) {
     let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
     let quotes = [];
 
-    let name = matchMention(message.author.username, message.guild.members, 1, cmds);
+    let name = matchMention(message.guild.members, 1, capital_cmds);
 
     for (let i = 0; i < entries.length - 1; i += 2) {
-      if (cmds.length < 2 || name[0] == entries[i].toLowerCase()) {
+      if (capital_cmds.length < 2 || name[0].toLowerCase() == entries[i].toLowerCase()) {
         let entry = [entries[i], entries[i+1]];
         quotes.push(entry);
       }
@@ -122,8 +133,8 @@ function searchQuote(message, cmds) {
 
 /**
  * @param {message} message  A message object as defined in discord.js
- * @param {PermissionResolvable} permission The permission level required
- * @return {boolean} Whether or not the user has the permission
+ * @param {PermissionResolvable} permission  The permission level required
+ * @return {boolean}  Whether or not the user has the permission
  */
 function checkPermission(message, permission) {
   let admins = [];
@@ -143,6 +154,10 @@ function checkPermission(message, permission) {
   return false;
 }
 
+/**
+ *  @param {message} message  A message object as defined in discord.js
+ *  @param {string[]} cmds  Capitalized strings containing an action and potential extra parameters
+ */
 function listQuotes(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
     fs.readFile("quotes.txt", function(err, text) {
@@ -167,6 +182,10 @@ function listQuotes(message, cmds) {
   }
 }
 
+/**
+ *  @param {message} message  A message object as defined in discord.js
+ *  @param {string[]} cmds  Capitalized strings containing an action and potential extra parameters
+ */
 function deleteQuote(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
     let new_entries = '';
@@ -213,12 +232,13 @@ function deleteQuote(message, cmds) {
 
 /**
  *  @param {message} message  A message object as defined in discord.js
- *  @param {string[]} cmds Strings containing an action and potential extra parameters
+ *  @param {string[]} cmds  Strings containing an action and potential extra parameters
+ *  @param {string[]} capital_cmds  Capitalized strings containing an action and potential extra parameters
  */
-function quote(message, cmds) {
+function quote(message, cmds, capital_cmds) {
   switch (cmds[1]) {
     case 'add':
-      addUserQuote(message, cmds);
+      addUserQuote(message, capital_cmds);
       break;
     case 'list':
       listQuotes(message, cmds);
@@ -227,7 +247,7 @@ function quote(message, cmds) {
       deleteQuote(message, cmds);
       break;
     default: {
-      searchQuote(message, cmds);
+      searchQuote(message, capital_cmds);
     }
   }
 }
