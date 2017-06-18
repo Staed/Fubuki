@@ -2,12 +2,13 @@ let config = require('./config');
 let fs = require('fs');
 
 /**
+ *  @param {string} capital_name The username with proper capitalization
  *  @param {Collection<Snowflake, GuildMember>} members  A Map of [user id : member object]
  *  @param {int} index The index in cmds where this @mention is found
  *  @param {string[]} cmds Strings containing an action and potential extra parameters
  *  @return {string[2]} The display name and username of that user in that order
  */
-function matchMention(members, index, cmds) {
+function matchMention(capital_name, members, index, cmds) {
   let user = cmds[index];
   let display_name = '';
   let username = '';
@@ -16,24 +17,13 @@ function matchMention(members, index, cmds) {
     if (/<@\d+>/.test(user)) {
       let user_id = user.substring(2, user.length - 1);
       let member = members.get(user_id);
-      display_name = member.display_name.toLowerCase();
-      username = member.user.username.toLowerCase();
+      display_name = member.display_name;
+      username = member.user.username;
     } else {
-      display_name = cmds.slice(index).join(' ');
+      display_name = capital_name;
       username = display_name;
     }
   }
-
-  /*if (!display_name) {
-    for (let [id, obj] of members) {
-      let d_name = obj.displayName.toLowerCase();
-      let u_name = obj.user.username.toLowerCase();
-
-      if (d_name == user || u_name == user) {
-        name = [d_name, u_name];
-      }
-    }
-  }*/
 
   return [display_name, username];
 }
@@ -88,13 +78,13 @@ function addQuote(channel, name, message) {
 
 function addUserQuote(message, cmds) {
   let user = cmds.slice(2).join(' ');
-  let name = matchMention(message.guild.members, 2, cmds);
+  let name = matchMention(message.author.username, message.guild.members, 2, cmds);
 
   let last_message;
   message.channel.fetchMessages({ limit: 100})
    .then( messages => {
      for (let [key, value] of messages.entries()) {
-       if (value.author.username.toLowerCase() == name[1] && /!quote( add)?.*/i.test(value.content) == false) {
+       if (value.author.username.toLowerCase() == name[1].toLowerCase() && /!quote( add)?.*/i.test(value.content) == false) {
          last_message = value;
          break;
        }
@@ -117,7 +107,7 @@ function searchQuote(message, cmds) {
     let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
     let quotes = [];
 
-    let name = matchMention(message.guild.members, 1, cmds);
+    let name = matchMention(message.author.username, message.guild.members, 1, cmds);
 
     for (let i = 0; i < entries.length - 1; i += 2) {
       if (cmds.length < 2 || name[0] == entries[i].toLowerCase()) {
