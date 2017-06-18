@@ -163,8 +163,17 @@ let fs = require('fs');
        let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
        let quotes = [];
 
+       let name = '';
+       if (cmds.length > 1) {
+         if (/<@\d+>/.test(cmds[1])) {
+           name = message.guild.members.get(cmds[1].substring(2, cmds[1].length - 1)).displayName.toLowerCase();
+         } else {
+           name = cmds[1];
+         }
+       }
+
        for (let i = 0; i < entries.length - 1; i += 2) {
-         if ((cmds.length > 1 && cmds[1] == entries[i].toLowerCase()) || cmds.length < 2) {
+         if (cmds.length < 2 || name == entries[i].toLowerCase()) {
            let entry = [entries[i], entries[i+1]];
            quotes.push(entry);
          }
