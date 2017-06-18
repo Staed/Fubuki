@@ -106,11 +106,11 @@ let fs = require('fs');
   */
  function quote(message, cmds) {
    if (cmds[1] == 'add') {
-     let user = cmds[2];
+     let user = cmds.slice(2).join(' ');
      let member;
 
      if (user.charAt(1) == '@') {
-       let obj = message.guild.members.get(memberName.substring(2, memberName.length - 1));
+       let obj = message.guild.members.get(user.substring(2, user.length - 1));
        if (typeof obj !== 'undefined') {
          member = obj;
        }
@@ -128,7 +128,7 @@ let fs = require('fs');
      message.channel.fetchMessages({ limit: 100})
       .then( messages => {
         for (let [key, value] of messages.entries()) {
-          if (value.author.username == member.user.username && value.content !== /!quote.*\n/i) {
+          if (value.author.username == member.user.username && /!quote( add)?.*/i.test(value.content) == false) {
             lastMessage = value;
             break;
           }
@@ -140,6 +140,8 @@ let fs = require('fs');
               console.log("Could not append quote to file");
               return;
             }
+            message.channel.send("Added quote from " + member.displayName)
+              .catch( reason => { console.log("Rejected Quote Added Promise for " + reason); });
             console.log('Quote added: ' + member.displayName + " ::: " + lastMessage.content);
           });
         } else {
@@ -150,7 +152,6 @@ let fs = require('fs');
       })
       .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
    } else {
-     // Quote text is read async and then put into a map for fast retrevial
      fs.readFile("quotes.txt", function(err, text) {
        if (err) {
          console.log("Failed to read Quote file: " + err);
@@ -160,18 +161,37 @@ let fs = require('fs');
        }
 
        let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
-       let quotes = new Map();
+       let quotes = [];
 
-       for (let i = 0; i < entries.length - 1; i += 2) {
-         quotes.set(entries[i], entries[i+1]);
+       let name = '';
+       if (cmds.length > 1) {
+         if (/<@\d+>/.test(cmds[1])) {
+           name = message.guild.members.get(cmds[1].substring(2, cmds[1].length - 1)).displayName.toLowerCase();
+         } else {
+           name = cmds.slice(1).join(' ');
+         }
        }
 
-       let rand = Math.random() * quotes.size - 1;
+       for (let i = 0; i < entries.length - 1; i += 2) {
+         if (cmds.length < 2 || name == entries[i].toLowerCase()) {
+           let entry = [entries[i], entries[i+1]];
+           quotes.push(entry);
+         }
+       }
+
+       if (quotes.size <= 0) {
+         message.channel.send("No quotes found")
+          .catch( reason => { console.log("Rejected Quote NoQuote Promise for " + reason); });
+         console.log("No quotes found");
+         return;
+       }
+
+       let rand = Math.random() * quotes.length - 1;
        let count = 0;
 
-       for (let [key, value] of quotes.entries()) {
+       for (let quote of quotes) {
          if (count >= rand) {
-           message.channel.send("\"" + value + "\" - " + key )
+           message.channel.send("\"" + quote[1] + "\" - " + quote[0] )
             .catch( reason => { console.log("Rejected Quote Read Promise for " + reason); });
            break;
          }
