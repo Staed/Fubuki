@@ -5,6 +5,7 @@
 
 let config = require('./config');
 let request = require('request-promise');
+let fs = require('fs');
 
 /**
  *  @param {message} message  A message object as defined in discord.js
@@ -123,7 +124,6 @@ let request = require('request-promise');
        }
      }
 
-     let fs = require('fs');
      let ws = fs.createWriteStream('quotes.txt');
      ws.on('finish', function () {
        console.log('Quote added');
@@ -141,4 +141,4 @@ let request = require('request-promise');
    return Math.floor(Math.random() * 10 + 1);
  }
 
- module.exports = {urbanDefine, getAvatar, rate};
+ module.exports = {urbanDefine, getAvatar, rate, quote};
