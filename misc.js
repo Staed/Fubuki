@@ -106,7 +106,7 @@ let fs = require('fs');
   */
  function quote(message, cmds) {
    if (cmds[1] == 'add') {
-     let user = cmds[2];
+     let user = cmds.slice(2).join(' ');
      let member;
 
      if (user.charAt(1) == '@') {
@@ -168,7 +168,7 @@ let fs = require('fs');
          if (/<@\d+>/.test(cmds[1])) {
            name = message.guild.members.get(cmds[1].substring(2, cmds[1].length - 1)).displayName.toLowerCase();
          } else {
-           name = cmds[1];
+           name = cmds.slice(1).join(' ');
          }
        }
 
