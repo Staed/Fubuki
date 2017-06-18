@@ -124,12 +124,60 @@ let fs = require('fs');
        }
      }
 
-     let ws = fs.createWriteStream('quotes.txt');
-     ws.on('finish', function () {
-       console.log('Quote added');
+     let lastMessage;
+     message.channel.fetchMessages({ limit: 100})
+      .then( messages => {
+        for (let [key, value] of messages.entries()) {
+          if (value.author.username == member.user.username && value.content !== /!quote.*\n/i) {
+            lastMessage = value;
+            break;
+          }
+        }
+
+        if (lastMessage != null) {
+          fs.appendFile('quotes.txt', member.displayName + ':::' + lastMessage.content + '\n', function (err) {
+            if (err) {
+              console.log("Could not append quote to file");
+              return;
+            }
+            console.log('Quote added: ' + member.displayName + " ::: " + lastMessage.content);
+          });
+        } else {
+          message.channel.send("No quote from that user found in the last 100 messages")
+            .catch( reason => { console.log("Rejected Quote NoFound Promise for " + reason); });
+          console.log('No Quote found');
+        }
+      })
+      .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
+   } else {
+     // Quote text is read async and then put into a map for fast retrevial
+     fs.readFile("quotes.txt", function(err, text) {
+       if (err) {
+         console.log("Failed to read Quote file: " + err);
+         message.channel.send("Failed to find a quote")
+          .catch( reason => { console.log("Rejected Quote Read Promise for " + reason); });
+         return;
+       }
+
+       let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
+       let quotes = new Map();
+
+       for (let i = 0; i < entries.length - 1; i += 2) {
+         quotes.set(entries[i], entries[i+1]);
+       }
+
+       let rand = Math.random() * quotes.size - 1;
+       let count = 0;
+
+       for (let [key, value] of quotes.entries()) {
+         if (count >= rand) {
+           message.channel.send("\"" + value + "\" - " + key )
+            .catch( reason => { console.log("Rejected Quote Read Promise for " + reason); });
+           break;
+         }
+         count += 1;
+       }
      });
-     ws.write(member.displayName + ' - ' + member.lastMessage);
-     ws.end();
    }
  }
 
