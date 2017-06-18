@@ -110,7 +110,7 @@ let fs = require('fs');
      let member;
 
      if (user.charAt(1) == '@') {
-       let obj = message.guild.members.get(memberName.substring(2, memberName.length - 1));
+       let obj = message.guild.members.get(user.substring(2, user.length - 1));
        if (typeof obj !== 'undefined') {
          member = obj;
        }

@@ -91,12 +91,12 @@ FUBUKI.on('message', message => {
       misc.rate(message, cmds);
       break;
     case '!quote':
-      if (cmds[2] !== "fubuki") {
+      if (cmds[1] !== 'fubuki' && cmds[2] !== "fubuki") {
         misc.quote(message, cmds);
       } else {
-        message.channel.send("I can't add a quote from myself dummy!")
+        message.channel.send("I can't quote from myself dummy!")
           .then(function () {
-            console.log("Refused to add self quote");
+            console.log("Refused to quote self");
           })
           .catch( reason => { console.log("Rejected Quote Fubuki Promise for " + reason); });
       }
