@@ -6,6 +6,7 @@ let booru = require('./booru.js');
 let remind = require('./remind.js');
 let musicplayer = require('./musicplayer.js');
 let misc = require('./misc.js');
+let quote = require('./quote.js');
 
 FUBUKI.on('ready', () => {
   console.log('Ready');
@@ -92,7 +93,7 @@ FUBUKI.on('message', message => {
       break;
     case '!quote':
       if (cmds[1] !== 'fubuki' && cmds[2] !== "fubuki") {
-        misc.quote(message, cmds);
+        quote.quote(message, cmds);
       } else {
         message.channel.send("I can't quote from myself dummy!")
           .then(function () {

@@ -100,107 +100,6 @@ let fs = require('fs');
    }
  }
 
- /**
-  *  @param {message} message  A message object as defined in discord.js
-  *  @param {string[]} cmds Strings containing an action and potential extra parameters
-  */
- function quote(message, cmds) {
-   if (cmds[1] == 'add') {
-     let user = cmds.slice(2).join(' ');
-     let member;
-
-     if (user.charAt(1) == '@') {
-       let obj = message.guild.members.get(user.substring(2, user.length - 1));
-       if (typeof obj !== 'undefined') {
-         member = obj;
-       }
-     } else {
-       for (var [id, member_obj] of message.guild.members) {
-         let display_name = member_obj.displayName.toLowerCase();
-         let username = member_obj.user.username.toLowerCase();
-         if (display_name == user || username == user) {
-           member = member_obj;
-         }
-       }
-     }
-
-     let lastMessage;
-     message.channel.fetchMessages({ limit: 100})
-      .then( messages => {
-        for (let [key, value] of messages.entries()) {
-          if (value.author.username == member.user.username && /!quote( add)?.*/i.test(value.content) == false) {
-            lastMessage = value;
-            break;
-          }
-        }
-
-        if (lastMessage != null) {
-          fs.appendFile('quotes.txt', member.displayName + ':::' + lastMessage.content + '\n', function (err) {
-            if (err) {
-              console.log("Could not append quote to file");
-              return;
-            }
-            message.channel.send("Added quote from " + member.displayName)
-              .catch( reason => { console.log("Rejected Quote Added Promise for " + reason); });
-            console.log('Quote added: ' + member.displayName + " ::: " + lastMessage.content);
-          });
-        } else {
-          message.channel.send("No quote from that user found in the last 100 messages")
-            .catch( reason => { console.log("Rejected Quote NoFound Promise for " + reason); });
-          console.log('No Quote found');
-        }
-      })
-      .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
-   } else {
-     fs.readFile("quotes.txt", function(err, text) {
-       if (err) {
-         console.log("Failed to read Quote file: " + err);
-         message.channel.send("Failed to find a quote")
-          .catch( reason => { console.log("Rejected Quote Read Promise for " + reason); });
-         return;
-       }
-
-       let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
-       let quotes = [];
-
-       let name = '';
-       if (cmds.length > 1) {
-         if (/<@\d+>/.test(cmds[1])) {
-           name = message.guild.members.get(cmds[1].substring(2, cmds[1].length - 1)).displayName.toLowerCase();
-         } else {
-           name = cmds.slice(1).join(' ');
-         }
-       }
-
-       for (let i = 0; i < entries.length - 1; i += 2) {
-         if (cmds.length < 2 || name == entries[i].toLowerCase()) {
-           let entry = [entries[i], entries[i+1]];
-           quotes.push(entry);
-         }
-       }
-
-       if (quotes.size <= 0) {
-         message.channel.send("No quotes found")
-          .catch( reason => { console.log("Rejected Quote NoQuote Promise for " + reason); });
-         console.log("No quotes found");
-         return;
-       }
-
-       let rand = Math.random() * quotes.length - 1;
-       let count = 0;
-
-       for (let quote of quotes) {
-         if (count >= rand) {
-           message.channel.send("\"" + quote[1] + "\" - " + quote[0] )
-            .catch( reason => { console.log("Rejected Quote Read Promise for " + reason); });
-           break;
-         }
-         count += 1;
-       }
-     });
-   }
- }
-
 /**
  * @param {string} text A string containing the thing to be rated
  * @return {int} A number between 1 and 10 inclusive
@@ -209,4 +108,4 @@ let fs = require('fs');
    return Math.floor(Math.random() * 10 + 1);
  }
 
- module.exports = {urbanDefine, getAvatar, rate, quote};
+ module.exports = {urbanDefine, getAvatar, rate};
