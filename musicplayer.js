@@ -49,6 +49,13 @@ function disconnect(guild) {
  */
 function play(message) {
   let next_vid = message.content.split(' ')[1]
+  if (next_vid == undefined) {
+    message.channel.send("You need to specify a URL!")
+      .catch( reason => { console.log("Rejected Music PlayUndefined Promise for " + reason); });
+    console.log("Blank URL, command skipped");
+    return;
+  }
+
   playlist_queue.push(next_vid);
 
   console.log('Added ' + next_vid.replace(yt_header,'') + ' to the queue');
@@ -56,7 +63,7 @@ function play(message) {
     if (err) console.log("No metainfo for the video found");
     else {
       if (playlist_queue.length > 1) {
-        message.channel.sendMessage('Added **' + info.title + '** to the queue.');
+        message.channel.send('Added **' + info.title + '** to the queue.');
       }
     }
   });
@@ -89,7 +96,7 @@ function playQueued(next_vid, message) {
                 ':' + info.length_seconds%60 + ']\n(' +
                 next_vid.replace(yt_header,'') + ') ' +  info.thumbnail_url;
 
-              message.channel.sendMessage(playback_info);
+              message.channel.send(playback_info);
             }
           });
 
@@ -114,7 +121,7 @@ function playQueued(next_vid, message) {
             ':' + info.length_seconds%60 + ']\n(' +
             next_vid.replace(yt_header,'') + ') ' + info.thumbnail_url;
 
-          message.channel.sendMessage(playback_info);
+          message.channel.send(playback_info);
         }
       });
 
@@ -148,7 +155,7 @@ function playNext(message) {
  */
 function skip(message) {
   console.log(playlist_queue[0].replace(yt_header,'') + ' skipped');
-  message.channel.sendMessage('Skipping song.');
+  message.channel.send('Skipping song.');
   dispatcher.end();
 }
 
@@ -166,7 +173,7 @@ function repeat(message) {
     YTDL.getInfo(last_played, function(err, info) {
       if (err) console.log("No metainfo for the video found");
       else {
-        message.channel.sendMessage('Added **' + info.title + '** to the queue.');
+        message.channel.send('Added **' + info.title + '** to the queue.');
       }
     });
   }
@@ -177,14 +184,14 @@ function repeat(message) {
  */
 function nowPlaying(channel) {
   if (playlist_queue.length === 0) {
-    channel.sendMessage('Nothing is being played but my heart.');
+    channel.send('Nothing is being played but my heart.');
   } else {
     YTDL.getInfo(playlist_queue[0], function(err, info) {
       if (err) console.log("No metainfo for the video found");
       else {
         let playback_info = 'Now playing **' + info.title + '**\n(' +
           playlist_queue[0].replace(yt_header,'') + ') ' + info.thumbnail_url;
-        channel.sendMessage(playback_info);
+        channel.send(playback_info);
       }
     });
   }
