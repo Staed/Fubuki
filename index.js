@@ -88,6 +88,9 @@ FUBUKI.on('message', message => {
     case '!a':
       misc.getAvatar(message, cmds[1]);
       break;
+    case '!coinflip':
+      misc.coinFlip(message);
+      break;
     case '!rate':
       misc.rate(message, cmds);
       break;

@@ -76,6 +76,19 @@ let fs = require('fs');
    }
  }
 
+/**
+* @param {message} message A message object as defined in discord.js
+*/
+ function coinFlip(message) {
+   let coin = 'tails';
+   let flip = (Math.floor(Math.random() * 2) == 0);
+
+   if (flip) {
+     coin = 'heads';
+   }
+   message.channel.send('You flipped **' + coin + '**');
+ }
+
  /**
   *  @param {message} message  A message object as defined in discord.js
   *  @param {string[]} cmds Strings that need to be joined and rated
@@ -108,4 +121,4 @@ let fs = require('fs');
    return Math.floor(Math.random() * 10 + 1);
  }
 
- module.exports = {urbanDefine, getAvatar, rate};
+ module.exports = {urbanDefine, getAvatar, coinFlip, rate};
