@@ -17,7 +17,8 @@
     "request": "2.x",
     "request-promise": "4.x",
     "ytdl-core": "*",
-    "opusscript": "*"
+    "opusscript": "*",
+    "cheerio": "*"
   },
   "keywords": [
     "discord",

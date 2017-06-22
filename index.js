@@ -7,6 +7,7 @@ let remind = require('./remind.js');
 let music_player = require('./musicplayer.js');
 let misc = require('./misc.js');
 let quote = require('./quote.js');
+let finance = require('./finance.js');
 
 FUBUKI.on('ready', () => {
   console.log('Ready');
@@ -104,6 +105,9 @@ FUBUKI.on('message', message => {
           })
           .catch( reason => { console.log("Rejected Quote Fubuki Promise for " + reason); });
       }
+      break;
+    case '!stock':
+      finance.getStock(message, cmds[1]);
       break;
     case '!help':
       let helpText = 'The following commands are avalible to this bot:\n\n' +

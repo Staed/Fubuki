@@ -139,4 +139,21 @@ let fs = require('fs');
    return Math.floor(Math.random() * 10 + 1);
  }
 
- module.exports = {urbanDefine, getAvatar, coinFlip, rate};
+ /**
+  * @param {string} hostname
+  * @param {string} path
+  * @param {string} tags The parameter and value
+  * @return {options} The options used in sending a Request
+  */
+ function getOptions(hostname, path, tags) {
+   /** Do NOT use qs: { ... }, it replaces '+' with '%20' */
+   let options = {
+     method: 'GET',
+     uri: hostname + path + tags,
+     json: true,
+   }
+   console.log('Recieved request for: ' + path + tags);
+   return options;
+ }
+
+ module.exports = {urbanDefine, getAvatar, coinFlip, rate, getOptions};

@@ -1,5 +1,6 @@
 let config = require('./config');
 let request = require('request-promise');
+let misc = require('./misc')
 let prev_img_id = null;
 
 /**
@@ -12,23 +13,6 @@ function cleanGet(cmds) {
     tag_arr.push(encodeURIComponent(val));
   }
   return String(tag_arr.join('+'));
-}
-
-/**
- * @param {string} hostname
- * @param {string} path
- * @param {string} tags The parameter and value
- * @return {options} The options used in sending a Request
- */
-function getOptions(hostname, path, tags) {
-  /** Do NOT use qs: { ... }, it replaces '+' with '%20' */
-  let options = {
-    method: 'GET',
-    uri: hostname + path + tags,
-    json: true,
-  }
-  console.log('Recieved request for: ' + path + tags);
-  return options;
 }
 
 /**
@@ -77,7 +61,7 @@ function getDanbooru(message, cmds) {
   if (prev_img_id != null) {
       tag_list += "+-id:" + prev_img_id;
   }
-  let options = getOptions(config.danbooru_auth, config.danbooru_get, tag_list);
+  let options = misc.getOptions(config.danbooru_auth, config.danbooru_get, tag_list);
 
   request(options)
     .then(function (body) {
@@ -115,7 +99,7 @@ function getDanbooru(message, cmds) {
  */
 function getSafebooru(message, cmds) {
   let tag_list = cleanGet(cmds);
-  let options = getOptions(config.sbooru_url, config.sbooru_get, tag_list);
+  let options = misc.getOptions(config.sbooru_url, config.sbooru_get, tag_list);
   message.channel.send('fixme')
     .catch( reason => { console.log("Rejected SafeBooru Msg Promise for " + reason); });
 }
