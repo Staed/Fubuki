@@ -86,8 +86,8 @@ let fs = require('fs');
    if (flip) {
      coin = 'heads';
    }
-   message.channel.send('You flipped **' + coin + '**');
-   .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
+   message.channel.send('You flipped **' + coin + '**')
+    .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
  }
 
  /**
