@@ -80,11 +80,18 @@ let fs = require('fs');
 * @param {message} message A message object as defined in discord.js
 */
  function coinFlip(message) {
-   let coin = 'tails';
-   let flip = (Math.floor(Math.random() * 2) == 0);
+   let coin;
+   let flip = Math.floor(Math.random() * 100 + 1);
 
-   if (flip) {
+   if (flip < 50) {
+     coin = 'tails';
+   } else if (flip > 50) {
      coin = 'heads';
+   } else {
+     message.channel.send('Uhm... the coin landed on its side, flipping again.')
+      .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
+    message.channel.send('!coinflip')
+      .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
    }
    message.channel.send('You flipped **' + coin + '**')
     .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
