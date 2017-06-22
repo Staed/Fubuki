@@ -26,8 +26,8 @@ let fs = require('fs');
           message.channel.send("There are no results for: " + term.replace('+', ' '))
             .catch( reason => { console.log("Rejected Urban Null Promise for " + reason); });
         } else {
-          let firstDef = body.list[0];
-          message.channel.send('**' + cmds.slice(1).join(' ') + ':**\n' + firstDef.definition + '\n' + firstDef.example)
+          let first_def = body.list[0];
+          message.channel.send('**' + cmds.slice(1).join(' ') + ':**\n' + first_def.definition + '\n' + first_def.example)
             .catch( reason => { console.log("Rejected Urban Definition Promise for " + reason); });
         }
       }).catch(function (err) {
@@ -52,31 +52,31 @@ let fs = require('fs');
    let user = cmds.slice(1).join(' ');
 
    console.log("Looking for: " + user)
-   let memberName = user.toLowerCase();
-   let avatarURL = '';
+   let member_name = user.toLowerCase();
+   let avatar_url = '';
 
-   if (/<@.?\d+>/.test(memberName)) {
-     let obj = message.guild.members.get(memberName.replace(/\D/g, ''));
+   if (/<@.?\d+>/.test(member_name)) {
+     let obj = message.guild.members.get(member_name.replace(/\D/g, ''));
      if (typeof obj !== 'undefined') {
-      avatarURL = obj.user.displayAvatarURL;
-      console.log("Found " + obj.displayName + "'s avatar at " + avatarURL);
+      avatar_url = obj.user.displayavatar_url;
+      console.log("Found " + obj.display_name + "'s avatar at " + avatar_url);
      }
    } else {
-     for (var [id, memberObj] of message.guild.members) {
-       let displayName = memberObj.displayName.toLowerCase();
-       let username = memberObj.user.username.toLowerCase();
+     for (var [id, member_obj] of message.guild.members) {
+       let display_name = member_obj.display_name.toLowerCase();
+       let username = member_obj.user.username.toLowerCase();
 
-       if (displayName == memberName || username == memberName) {
-        avatarURL = memberObj.user.displayAvatarURL;
-        console.log("Found " + memberObj.displayName + "'s avatar at " + avatarURL);
+       if (display_name == member_name || username == member_name) {
+        avatar_url = member_obj.user.displayavatar_url;
+        console.log("Found " + member_obj.display_name + "'s avatar at " + avatar_url);
         break;
        }
      }
    }
 
-   if (avatarURL) {
-     avatarURL = avatarURL.replace('jpg', 'png');
-     message.channel.send(avatarURL)
+   if (avatar_url) {
+     avatar_url = avatar_url.replace('jpg', 'png');
+     message.channel.send(avatar_url)
       .catch( reason => { console.log("Rejected Avatar Result for " + reason); });
    } else {
      console.log("Could not find member " + user);

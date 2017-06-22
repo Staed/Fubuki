@@ -4,7 +4,7 @@ const FUBUKI = new DISCORD.Client();
 let config = require('./config');
 let booru = require('./booru.js');
 let remind = require('./remind.js');
-let musicplayer = require('./musicplayer.js');
+let music_player = require('./musicplayer.js');
 let misc = require('./misc.js');
 let quote = require('./quote.js');
 
@@ -43,9 +43,9 @@ FUBUKI.on('message', message => {
         .catch( reason => { console.log("Rejected Booru Delete Promise for " + reason); });
       break;
     case '!bsafe':
-      let newCmd = cmds;
-      newCmd.push('rating:safe');
-      booru.getDanbooru(message, newCmd);
+      let new_cmd = cmds;
+      new_cmd.push('rating:safe');
+      booru.getDanbooru(message, new_cmd);
       message.delete()
         .catch( reason => { console.log("Rejected Booru Delete Promise for " + reason); });
       break;
@@ -53,34 +53,34 @@ FUBUKI.on('message', message => {
       remind.remindMe(message);
       break;
     case '!play':
-      musicplayer.play(message);
+      music_player.play(message);
       message.delete()
         .then(msg => { console.log('Deleted message from ' + msg.author); })
         .catch( reason => { console.log("Rejected Music Delete Promise for " + reason); });
       break;
     case '!connect':
-      musicplayer.connect(message.guild);
+      music_player.connect(message.guild);
       break;
     case '!disconnect':
-      musicplayer.disconnect(message.guild);
+      music_player.disconnect(message.guild);
       break;
     case '!skip':
-      musicplayer.skip(message);
+      music_player.skip(message);
       break;
     case '!repeat':
-      musicplayer.repeat(message);
+      music_player.repeat(message);
       break;
     case '!nowplaying':
-      musicplayer.nowPlaying(message.channel);
+      music_player.nowPlaying(message.channel);
       break;
     case '!radio':
-      musicplayer.radio(message);
+      music_player.radio(message);
       message.delete()
         .then(msg => { console.log('Deleted message from ' + msg.author); })
         .catch( reason => { console.log("Rejected Radio Delete Promise for " + reason); });
       break;
     case '!stopradio':
-      musicplayer.stopRadio();
+      music_player.stopRadio();
       break;
     case '!urban':
       misc.urbanDefine(message, cmds);
