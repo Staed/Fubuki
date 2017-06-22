@@ -86,7 +86,7 @@ FUBUKI.on('message', message => {
       misc.urbanDefine(message, cmds);
       break;
     case '!a':
-      misc.getAvatar(message, cmds[1]);
+      misc.getAvatar(message, cmds);
       break;
     case '!coinflip':
       misc.coinFlip(message);

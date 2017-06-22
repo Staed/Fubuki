@@ -39,15 +39,24 @@ let fs = require('fs');
 
 /**
  * @param {message} message A message object as defined in discord.js
- * @param {string} user A string representation of the user either as an id or username
+ * @param {string[]} user An array of strings containing "!a" and a user's id or username
  */
- function getAvatar(message, user) {
+ function getAvatar(message, cmds) {
+   if (cmds[1] == undefined) {
+     console.log("No username for avatar specified");
+     message.channel.send("You need to specify who's avatar I am looking for!")
+      .catch( reason => { console.log("Rejected Avatar Reject Promise for " + reason); });
+     return;
+   }
+
+   let user = cmds.slice(1).join(' ');
+
    console.log("Looking for: " + user)
    let memberName = user.toLowerCase();
    let avatarURL = '';
 
-   if (memberName.charAt(1) == '@') {
-     let obj = message.guild.members.get(memberName.substring(2, memberName.length - 1));
+   if (/<@.?\d+>/.test(memberName)) {
+     let obj = message.guild.members.get(memberName.replace(/\D/g, ''));
      if (typeof obj !== 'undefined') {
       avatarURL = obj.user.displayAvatarURL;
       console.log("Found " + obj.displayName + "'s avatar at " + avatarURL);

@@ -13,8 +13,8 @@ function matchMention(members, index, capital_cmds) {
   let username = '';
 
   if (capital_cmds.length > index) {
-    if (/<@\d+>/.test(user)) {
-      let user_id = user.substring(2, user.length - 1);
+    if (/<@.?\d+>/.test(user)) {
+      let user_id = user.replace(/\D/g, '');
       let member = members.get(user_id);
       display_name = member.display_name;
       username = member.user.username;
