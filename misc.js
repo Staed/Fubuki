@@ -92,6 +92,7 @@ let fs = require('fs');
       .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
     message.channel.send('!coinflip')
       .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
+    break;
    }
    message.channel.send('You flipped **' + coin + '**')
     .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
