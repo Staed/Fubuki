@@ -156,4 +156,29 @@ let fs = require('fs');
    return options;
  }
 
- module.exports = {urbanDefine, getAvatar, coinFlip, rate, getOptions};
+ /**
+  * @param {message} message  A message object as defined in discord.js
+  */
+function deleteBooru(message) {
+  message.channel.fetchMessages({limit: 100})
+    .then( msgs => {
+      for (let [key, value] of msgs.entries()) {
+        if (value.author.id == config.id && /\*\*Tags:\*\* .*\nhttps:.*/.test(value.content) == true) {
+          value.delete()
+            .catch( reason => { console.log("Rejected Delete Message Promise for " + reason); });
+          console.log("Deleted " + value.content.replace('\n', '\t'));
+          return;
+        }
+      }
+
+      message.channel.send("No booru post to delete in the last 100 messages!")
+        .catch( reason => { console.log("Rejected Delete Exhaust Promise for " + reason); });
+    })
+    .catch(err => {
+      message.channel.send("Failed to fetch past messages")
+        .catch( reason => { console.log("Rejected Delete NotFound Promise for " + reason); });
+      console.log("No messages found: " + err);
+    });
+}
+
+ module.exports = {urbanDefine, getAvatar, coinFlip, rate, getOptions, deleteBooru};
