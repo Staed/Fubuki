@@ -1,6 +1,6 @@
 {
   "name": "discord-fubuki",
-  "version": "0.0.1",
+  "version": "0.5",
   "description": "A bot for the ages.",
   "author": {
     "name": "Staed"
@@ -18,7 +18,8 @@
     "request-promise": "4.x",
     "ytdl-core": "*",
     "opusscript": "*",
-    "cheerio": "*"
+    "cheerio": "*",
+    "jsonfile": "3.x"
   },
   "keywords": [
     "discord",
