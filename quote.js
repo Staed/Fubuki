@@ -20,9 +20,13 @@ function matchMention(members, index, capital_cmds) {
       username = member.user.username;
     } else {
       display_name = capital_cmds.slice(index).join(' ');
+      username = display_name;
 
       for (let [id, obj] of members) {
-        if (obj.displayName.toLowerCase() == display_name.toLowerCase()) {
+        let display_match = obj.displayName.toLowerCase() == display_name.toLowerCase();
+        let username_match = obj.user.username.toLowerCase() == username.toLowerCase();
+
+        if (display_match || username_match) {
           username = obj.user.username;
           break;
         }
@@ -64,15 +68,15 @@ function selectRandomQuote(channel, quotes) {
  *  @param {message} message The last message from that username
  */
 function addQuote(channel, name, message) {
-  if (message != null) {
-    fs.appendFile('quotes.txt', name + ':::' + message.content + '\n', function (err) {
+  if (message != null && message.guild != undefined) {
+    fs.appendFile('quotes.txt', message.guild.id.toString() + ':::' + name + ':::' + message.content + '\n', function (err) {
       if (err) {
         console.log("Could not append quote to file");
         return;
       }
       channel.send("Added quote from " + name)
         .catch( reason => { console.log("Rejected Quote Added Promise for " + reason); });
-      console.log('Quote added: ' + name + " ::: " + message.content);
+      console.log('Quote added: \"' + message.content + "\" from " + name + " in " + message.guild.name);
     });
   } else {
     channel.send("No quote from that user found in the last 100 messages")
@@ -91,13 +95,14 @@ function addUserQuote(message, capital_cmds) {
   message.channel.fetchMessages({ limit: 100})
    .then( messages => {
      for (let [key, value] of messages.entries()) {
-       if (value.author.username.toLowerCase() == name[1].toLowerCase() && /!quote( add)?.*/i.test(value.content) == false) {
+       let name_match = value.author.username.toLowerCase() == name[1].toLowerCase() || value.author.username.toLowerCase() == name[0].toLowerCase();
+       if (name_match && /!quote( add)?.*/i.test(value.content) == false) {
          last_message = value;
          break;
        }
      }
 
-     addQuote(message.channel, name[0], last_message);
+     addQuote(message.channel, name[1], last_message);
    })
    .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
 }
@@ -120,9 +125,9 @@ function searchQuote(message, capital_cmds) {
 
     let name = matchMention(message.guild.members, 1, capital_cmds);
 
-    for (let i = 0; i < entries.length - 1; i += 2) {
-      if (capital_cmds.length < 2 || name[0].toLowerCase() == entries[i].toLowerCase()) {
-        let entry = [entries[i], entries[i+1]];
+    for (let i = 0; i < entries.length - 2; i += 3) {
+      if (message.guild.id == entries[i] && (capital_cmds.length < 2 || name[1].toLowerCase() == entries[i+1].toLowerCase())) {
+        let entry = [entries[i+1], entries[i+2]];
         quotes.push(entry);
       }
     }
@@ -170,8 +175,10 @@ function listQuotes(message, cmds) {
 
       let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
       let list = '';
-      for (let i = 0; i < entries.length - 1; i += 2) {
-          list += i/2 + ". " +  entries[i] + '\t - \"' + entries[i+1] + "\"\n";
+      for (let i = 0; i < entries.length - 2; i += 3) {
+        if (message.guild.id == entries[i]) {
+          list += (i/3 + 1) + ". " +  entries[i+1] + '\t - \"' + entries[i+2] + "\"\n";
+        }
       }
       message.channel.send(list)
         .catch( reason => { console.log("Rejected Quote ListPrint Promise for " + reason); });
@@ -200,16 +207,22 @@ function deleteQuote(message, cmds) {
 
       let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
       let quotes = [];
-      for (let i = 0; i < entries.length - 1; i += 2) {
-        if(i == 2*cmds[2]) {
+      for (let i = 0; i < entries.length - 2; i += 3) {
+        if(i == 3*(cmds[2] - 1)) {
+          if (message.guild.id != entries[i]) {
+            message.channel.send("You can't delete quotes from outside this server")
+              .catch( reason => { console.log("Rejected Quote Delete NotSameGuild Promise for " + reason); });
+            console.log("Blocked attempt to delete quote from another server");
+            return;
+          }
           continue;
         }
-        let entry = [entries[i], entries[i+1]];
+        let entry = [entries[i], entries[i+1], entries[i+2]];
         quotes.push(entry);
       }
 
-      for (let [name, text] of quotes) {
-        new_entries += name + ":::" + text + "\n"
+      for (let [guild, name, text] of quotes) {
+        new_entries += guild + ":::" + name + ":::" + text + "\n"
       }
       new_entries = new_entries.substring(0, new_entries.length);
 
@@ -220,10 +233,10 @@ function deleteQuote(message, cmds) {
             .catch( reason => { console.log("Rejected Quote DeleteWrite Promise for " + reason); });
         }
       });
-    });
 
-    message.channel.send("Quote #" + cmds[2] + " deleted")
-      .catch( reason => { console.log("Rejected Quote DelSuccess Promise for " + reason); });
+      message.channel.send("Quote #" + cmds[2] + " deleted")
+        .catch( reason => { console.log("Rejected Quote DelSuccess Promise for " + reason); });
+    });
   } else {
     message.channel.send("You don't have the permission to do this!")
       .catch( reason => { console.log("Rejected Quote DelFail Promise for " + reason); });
