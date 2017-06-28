@@ -68,17 +68,17 @@ let request = require('request-promise');
    if (/<@.?\d+>/.test(memberName)) {
      let obj = message.guild.members.get(memberName.replace(/\D/g, ''));
      if (typeof obj !== 'undefined') {
-      avatarUrl = obj.user.displayavatar_url;
-      console.log('Found ' + obj.display_name + '\'s avatar at ' + avatarUrl);
+      avatarUrl = obj.user.displayAvatarURL;
+      console.log('Found ' + obj.displayName + '\'s avatar at ' + avatarUrl);
      }
    } else {
      for (let [, memberObj] of message.guild.members) {
-       let displayName = memberObj.display_name.toLowerCase();
+       let displayName = memberObj.displayName.toLowerCase();
        let username = memberObj.user.username.toLowerCase();
 
        if (displayName == memberName || username == memberName) {
-        avatarUrl = memberObj.user.displayavatar_url;
-        console.log('Found ' + memberObj.display_name +
+        avatarUrl = memberObj.user.displayAvatarURL;
+        console.log('Found ' + memberObj.displayName +
                     '\'s avatar at ' + avatarUrl);
         break;
        }
