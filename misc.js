@@ -26,8 +26,8 @@ let fs = require('fs');
           message.channel.send("There are no results for: " + term.replace('+', ' '))
             .catch( reason => { console.log("Rejected Urban Null Promise for " + reason); });
         } else {
-          let firstDef = body.list[0];
-          message.channel.send('**' + cmds.slice(1).join(' ') + ':**\n' + firstDef.definition + '\n' + firstDef.example)
+          let first_def = body.list[0];
+          message.channel.send('**' + cmds.slice(1).join(' ') + ':**\n' + first_def.definition + '\n' + first_def.example)
             .catch( reason => { console.log("Rejected Urban Definition Promise for " + reason); });
         }
       }).catch(function (err) {
@@ -39,41 +39,72 @@ let fs = require('fs');
 
 /**
  * @param {message} message A message object as defined in discord.js
- * @param {string} user A string representation of the user either as an id or username
+ * @param {string[]} user An array of strings containing "!a" and a user's id or username
  */
- function getAvatar(message, user) {
-   console.log("Looking for: " + user)
-   let memberName = user.toLowerCase();
-   let avatarURL = '';
+ function getAvatar(message, cmds) {
+   if (cmds[1] == undefined) {
+     console.log("No username for avatar specified");
+     message.channel.send("You need to specify who's avatar I am looking for!")
+      .catch( reason => { console.log("Rejected Avatar Reject Promise for " + reason); });
+     return;
+   }
 
-   if (memberName.charAt(1) == '@') {
-     let obj = message.guild.members.get(memberName.substring(2, memberName.length - 1));
+   let user = cmds.slice(1).join(' ');
+
+   console.log("Looking for: " + user)
+   let member_name = user.toLowerCase();
+   let avatar_url = '';
+
+   if (/<@.?\d+>/.test(member_name)) {
+     let obj = message.guild.members.get(member_name.replace(/\D/g, ''));
      if (typeof obj !== 'undefined') {
-      avatarURL = obj.user.displayAvatarURL;
-      console.log("Found " + obj.displayName + "'s avatar at " + avatarURL);
+      avatar_url = obj.user.displayavatar_url;
+      console.log("Found " + obj.display_name + "'s avatar at " + avatar_url);
      }
    } else {
-     for (var [id, memberObj] of message.guild.members) {
-       let displayName = memberObj.displayName.toLowerCase();
-       let username = memberObj.user.username.toLowerCase();
+     for (var [id, member_obj] of message.guild.members) {
+       let display_name = member_obj.display_name.toLowerCase();
+       let username = member_obj.user.username.toLowerCase();
 
-       if (displayName == memberName || username == memberName) {
-        avatarURL = memberObj.user.displayAvatarURL;
-        console.log("Found " + memberObj.displayName + "'s avatar at " + avatarURL);
+       if (display_name == member_name || username == member_name) {
+        avatar_url = member_obj.user.displayavatar_url;
+        console.log("Found " + member_obj.display_name + "'s avatar at " + avatar_url);
         break;
        }
      }
    }
 
-   if (avatarURL) {
-     avatarURL = avatarURL.replace('jpg', 'png');
-     message.channel.send(avatarURL)
+   if (avatar_url) {
+     avatar_url = avatar_url.replace('jpg', 'png');
+     message.channel.send(avatar_url)
       .catch( reason => { console.log("Rejected Avatar Result for " + reason); });
    } else {
      console.log("Could not find member " + user);
      message.channel.send("I couldn't find that member!")
       .catch( reason => { console.log("Rejected Avatar Null Promise for " + reason); });
    }
+ }
+
+/**
+* @param {message} message A message object as defined in discord.js
+*/
+ function coinFlip(message) {
+   let coin;
+   let flip = Math.floor(Math.random() * 100 + 1);
+
+   if (flip < 50) {
+     coin = 'tails';
+   } else if (flip > 50) {
+     coin = 'heads';
+   } else {
+     message.channel.send('Uhm... the coin landed on its side, flipping again.')
+      .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
+    message.channel.send('!coinflip')
+      .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
+    return;
+   }
+   message.channel.send('You flipped **' + coin + '**')
+    .catch( reason => { console.log("Rejected Coin Flip Promise for " + reason); });
  }
 
  /**
@@ -108,4 +139,60 @@ let fs = require('fs');
    return Math.floor(Math.random() * 10 + 1);
  }
 
- module.exports = {urbanDefine, getAvatar, rate};
+ /**
+  * @param {string} hostname
+  * @param {string} path
+  * @param {string} tags The parameter and value
+  * @return {options} The options used in sending a Request
+  */
+ function getOptions(hostname, path, tags) {
+   /** Do NOT use qs: { ... }, it replaces '+' with '%20' */
+   let options = {
+     method: 'GET',
+     uri: hostname + path + tags,
+     json: true,
+   }
+   console.log('Recieved request for: ' + path + tags);
+   return options;
+ }
+
+ /**
+  * @param {message} message  A message object as defined in discord.js
+  */
+function deleteBooru(message) {
+  message.channel.fetchMessages({limit: 100})
+    .then( msgs => {
+      for (let [key, value] of msgs.entries()) {
+        if (value.author.id == config.id && /\*\*Tags:\*\* .*\nhttps:.*/.test(value.content) == true) {
+          value.delete()
+            .catch( reason => { console.log("Rejected Delete Message Promise for " + reason); });
+          console.log("Deleted " + value.content.replace('\n', '\t'));
+          return;
+        }
+      }
+
+      message.channel.send("No booru post to delete in the last 100 messages!")
+        .catch( reason => { console.log("Rejected Delete Exhaust Promise for " + reason); });
+    })
+    .catch(err => {
+      message.channel.send("Failed to fetch past messages")
+        .catch( reason => { console.log("Rejected Delete NotFound Promise for " + reason); });
+      console.log("No messages found: " + err);
+    });
+}
+
+/**
+ * @param {string} orig  The original string
+ * @param {int} target_length  The length of the resulting string once the current string has been padded
+ * @return {string} The original string with the padding added
+ */
+ function padRight(orig, target_length) {
+   let text = orig;
+   while (text.length < target_length) {
+     text += " ";
+   }
+
+   return text;
+ }
+
+ module.exports = {urbanDefine, getAvatar, coinFlip, rate, getOptions, deleteBooru, padRight};

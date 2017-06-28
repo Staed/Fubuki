@@ -1,5 +1,7 @@
 let config = require('./config');
-let fs = require('fs');
+let jsonfile = require('jsonfile');
+
+let misc = require('./misc');
 
 /**
  *  @param {Collection<Snowflake, GuildMember>} members  A Map of [user id : member object]
@@ -13,16 +15,20 @@ function matchMention(members, index, capital_cmds) {
   let username = '';
 
   if (capital_cmds.length > index) {
-    if (/<@\d+>/.test(user)) {
-      let user_id = user.substring(2, user.length - 1);
+    if (/<@.?\d+>/.test(user)) {
+      let user_id = user.replace(/\D/g, '');
       let member = members.get(user_id);
       display_name = member.display_name;
       username = member.user.username;
     } else {
       display_name = capital_cmds.slice(index).join(' ');
+      username = display_name;
 
       for (let [id, obj] of members) {
-        if (obj.displayName.toLowerCase() == display_name.toLowerCase()) {
+        let display_match = obj.displayName.toLowerCase() == display_name.toLowerCase();
+        let username_match = obj.user.username.toLowerCase() == username.toLowerCase();
+
+        if (display_match || username_match) {
           username = obj.user.username;
           break;
         }
@@ -38,7 +44,7 @@ function matchMention(members, index, capital_cmds) {
  *  @param {string[][2]} quotes An array of string[2]s which contain [username, text]
  */
 function selectRandomQuote(channel, quotes) {
-  if (quotes.size <= 0) {
+  if (!Object.keys(quotes).length) {
     console.log("No quotes found");
     channel.send("No quotes found")
      .catch( reason => { console.log("Rejected Quote NoQuote Promise for " + reason); });
@@ -50,7 +56,7 @@ function selectRandomQuote(channel, quotes) {
 
   for (let quote of quotes) {
     if (count >= rand) {
-      channel.send("\"" + quote[1] + "\" - " + quote[0])
+      channel.send("\"" + quote.content + "\" - " + quote.name)
        .catch( reason => { console.log("Rejected Quote Read Promise for " + reason); });
       break;
     }
@@ -64,16 +70,27 @@ function selectRandomQuote(channel, quotes) {
  *  @param {message} message The last message from that username
  */
 function addQuote(channel, name, message) {
-  if (message != null) {
-    fs.appendFile('quotes.txt', name + ':::' + message.content + '\n', function (err) {
+  if (message != null && message.guild != undefined) {
+    let quote_list = [];
+
+    jsonfile.readFile('\quotes.json', function(err, data) {
       if (err) {
-        console.log("Could not append quote to file");
+        console.log("Could not read file");
         return;
       }
-      channel.send("Added quote from " + name)
-        .catch( reason => { console.log("Rejected Quote Added Promise for " + reason); });
-      console.log('Quote added: ' + name + " ::: " + message.content);
+      quote_list = data;
+
+      obj = {"guild": message.guild.id.toString(), "name": name, "content": message.content};
+      quote_list.push(obj);
+      jsonfile.writeFileSync('\quotes.json', quote_list, {spaces: 2}, function(err) {
+        console.log("Could not append quote to file");
+        return;
+      });
     });
+
+    channel.send("Added quote from " + name)
+      .catch( reason => { console.log("Rejected Quote Added Promise for " + reason); });
+    console.log('Quote added: \"' + message.content + "\" from " + name + " in " + message.guild.name);
   } else {
     channel.send("No quote from that user found in the last 100 messages")
       .catch( reason => { console.log("Rejected Quote NoFound Promise for " + reason); });
@@ -91,13 +108,14 @@ function addUserQuote(message, capital_cmds) {
   message.channel.fetchMessages({ limit: 100})
    .then( messages => {
      for (let [key, value] of messages.entries()) {
-       if (value.author.username.toLowerCase() == name[1].toLowerCase() && /!quote( add)?.*/i.test(value.content) == false) {
+       let name_match = value.author.username.toLowerCase() == name[1].toLowerCase() || value.author.username.toLowerCase() == name[0].toLowerCase();
+       if (name_match && /!quote( add)?.*/i.test(value.content) == false) {
          last_message = value;
          break;
        }
      }
 
-     addQuote(message.channel, name[0], last_message);
+     addQuote(message.channel, name[1], last_message);
    })
    .catch( reason => { console.log("Rejected Quote Fetch Promise for " + reason); });
 }
@@ -107,22 +125,18 @@ function addUserQuote(message, capital_cmds) {
  *  @param {string[]} capital_cmds  Capitalized strings containing an action and potential extra parameters
  */
 function searchQuote(message, capital_cmds) {
-  fs.readFile("quotes.txt", function(err, text) {
+  jsonfile.readFile('\quotes.json', function(err, quote_list) {
     if (err) {
-      console.log("Failed to read Quote file: " + err);
-      message.channel.send("Failed to find a quote")
-       .catch( reason => { console.log("Rejected Quote SearchRead Promise for " + reason); });
+      console.log("Could not read file");
       return;
     }
 
-    let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
     let quotes = [];
 
     let name = matchMention(message.guild.members, 1, capital_cmds);
 
-    for (let i = 0; i < entries.length - 1; i += 2) {
-      if (capital_cmds.length < 2 || name[0].toLowerCase() == entries[i].toLowerCase()) {
-        let entry = [entries[i], entries[i+1]];
+    for (let entry of quote_list) {
+      if (message.guild.id == entry.guild && (capital_cmds.length < 2 || name[1].toLowerCase() == entry.name.toLowerCase())) {
         quotes.push(entry);
       }
     }
@@ -160,7 +174,7 @@ function checkPermission(message, permission) {
  */
 function listQuotes(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
-    fs.readFile("quotes.txt", function(err, text) {
+    jsonfile.readFile("\quotes.json", function(err, quote_list) {
       if (err) {
         console.log("Failed to read Quote file: " + err);
         message.channel.send("Failed to find a quote")
@@ -168,10 +182,13 @@ function listQuotes(message, cmds) {
         return;
       }
 
-      let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
       let list = '';
-      for (let i = 0; i < entries.length - 1; i += 2) {
-          list += i/2 + ". " +  entries[i] + '\t - \"' + entries[i+1] + "\"\n";
+      let i = 0;
+      for (let entry of quote_list) {
+        if (message.guild.id == entry.guild) {
+          list += misc.padRight(i + ". ", 5) + misc.padRight(entry.name, 18) + " - \" " + entry.content + " \"\n";
+        }
+        i++;
       }
       message.channel.send(list)
         .catch( reason => { console.log("Rejected Quote ListPrint Promise for " + reason); });
@@ -188,9 +205,7 @@ function listQuotes(message, cmds) {
  */
 function deleteQuote(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
-    let new_entries = '';
-
-    fs.readFile("quotes.txt", function(err, text) {
+    jsonfile.readFile("\quotes.json", function(err, quote_list) {
       if (err) {
         console.log("Failed to read Quote file: " + err);
         message.channel.send("Failed to find a quote")
@@ -198,32 +213,34 @@ function deleteQuote(message, cmds) {
         return;
       }
 
-      let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
-      let quotes = [];
-      for (let i = 0; i < entries.length - 1; i += 2) {
-        if(i == 2*cmds[2]) {
-          continue;
+      let i = 0;
+      for (let entry of quote_list) {
+        if (i == cmds[2]) {
+          if (message.guild.id != entry.guild) {
+            message.channel.send("You can't delete quotes from outside this server")
+              .catch( reason => { console.log("Rejected Quote Delete NotSameGuild Promise for " + reason); });
+            console.log("Blocked attempt to delete quote from another server");
+            return;
+          }
+
+          quote_list.splice(i, 1);
+          break;
         }
-        let entry = [entries[i], entries[i+1]];
-        quotes.push(entry);
+        i++;
       }
 
-      for (let [name, text] of quotes) {
-        new_entries += name + ":::" + text + "\n"
-      }
-      new_entries = new_entries.substring(0, new_entries.length);
-
-      fs.writeFile("quotes.txt", new_entries, function(err) {
+      jsonfile.writeFileSync('\quotes.json', quote_list, {spaces: 2}, function(err) {
         if (err) {
           console.log("Failed to write Quote file: " + err);
           message.channel.send("Failed to write to file")
             .catch( reason => { console.log("Rejected Quote DeleteWrite Promise for " + reason); });
+          return;
         }
       });
-    });
 
-    message.channel.send("Quote #" + cmds[2] + " deleted")
-      .catch( reason => { console.log("Rejected Quote DelSuccess Promise for " + reason); });
+      message.channel.send("Quote #" + cmds[2] + " deleted")
+        .catch( reason => { console.log("Rejected Quote DelSuccess Promise for " + reason); });
+    });
   } else {
     message.channel.send("You don't have the permission to do this!")
       .catch( reason => { console.log("Rejected Quote DelFail Promise for " + reason); });
