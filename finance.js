@@ -90,7 +90,9 @@ function getGoogle(message, company) {
 
       let market_data = $('.id-market-data-div');;
 
-      let name = $('.g-wrap .g-section .hdg').attr('id', 'companyheader').find('.g-first h3').text().trim();
+      let name = $('.g-wrap .g-section .hdg').attr('id', 'companyheader').find('.g-first h3').text();
+      name = name.replace(/\xA0.*/, "").trim();
+
       let current_price = market_data.find('.id-price-panel .pr').text().trim();
       let header = "**" + name + "**, currently at " + current_price;
 
