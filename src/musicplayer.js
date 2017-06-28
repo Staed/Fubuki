@@ -12,13 +12,10 @@ let playingRadio = false;
  * @return {Promise<VoiceConnection>}
  */
 function connect(guild) {
-  let voiceJoin = guild.channels.find( (val) => {
-    val.name === config.default_channel;
-  });
+  let voiceJoin = guild.channels.find( (val) =>
+                                        val.name === config.default_channel);
   if (voiceJoin === null) {
-    voiceJoin = guild.channels.find( (val) => {
-      val.type === 'voice';
-    });
+    voiceJoin = guild.channels.find( (val) => val.type === 'voice');
 
     if (voiceJoin === null) {
       console.log('ERR: Unable to find a voice channel.');
@@ -69,7 +66,10 @@ function play(message) {
     if (err) console.log('No metainfo for the video found');
     else {
       if (playlistQueue.length > 1) {
-        message.channel.send('Added **' + info.title + '** to the queue.');
+        message.channel.send('Added **' + info.title + '** to the queue.')
+          .catch( (reason) => {
+            console.log("Rejected Play AddSuccess Promise for " + reason);
+          });
       }
     }
   });
@@ -102,7 +102,11 @@ function playQueued(nextVid, message) {
                 ':' + info.length_seconds%60 + ']\n(' +
                 nextVid.replace(ytHeader, '') + ') ' + info.thumbnail_url;
 
-              message.channel.send(playbackInfo);
+              message.channel.send(playbackInfo)
+                .catch( (reason) => {
+                  console.log("Rejected PlayQueued GetInfo Promise for " +
+                              reason);
+                });
             }
           });
 
@@ -117,6 +121,13 @@ function playQueued(nextVid, message) {
           dispatcher.on('error', (err) => {
             console.log(err);
           });
+        })
+        .catch( (err) => {
+          console.log("Couldnt' connect to voice channel: " + err);
+          message.channel.send("Could not connect to a voice channel")
+            .catch( (reason) => {
+              console.log("Rejected PlayQueued Fail Promise for " + reason);
+            });
         });
     } else {
       ytdl.getInfo(nextVid, (err, info) => {
@@ -127,7 +138,10 @@ function playQueued(nextVid, message) {
             ':' + info.length_seconds%60 + ']\n(' +
             nextVid.replace(ytHeader, '') + ') ' + info.thumbnail_url;
 
-          message.channel.send(playbackInfo);
+          message.channel.send(playbackInfo)
+            .catch( (reason) => {
+              console.log("Rejected PlayQueued Success Promise for " + reason);
+            });
         }
       });
 
@@ -162,7 +176,10 @@ function playNext(message) {
  */
 function skip(message) {
   console.log(playlistQueue[0].replace(ytHeader, '') + ' skipped');
-  message.channel.send('Skipping song.');
+  message.channel.send('Skipping song.')
+    .catch( (reason) => {
+      console.log("Rejected Skip Success Promise for " + reason);
+    });
   dispatcher.end();
 }
 
@@ -180,7 +197,10 @@ function repeat(message) {
     ytdl.getInfo(lastPlayed, (err, info) => {
       if (err) console.log('No metainfo for the video found');
       else {
-        message.channel.send('Added **' + info.title + '** to the queue.');
+        message.channel.send('Added **' + info.title + '** to the queue.')
+          .catch( (reason) => {
+            console.log("Rejected Repeat Success Promise for " + reason);
+          });
       }
     });
   }
@@ -191,14 +211,20 @@ function repeat(message) {
  */
 function nowPlaying(channel) {
   if (playlistQueue.length === 0) {
-    channel.send('Nothing is being played but my heart.');
+    channel.send('Nothing is being played but my heart.')
+      .catch( (reason) => {
+        console.log("rejected NowPlaying Empty Promise for " + reason);
+      });
   } else {
     ytdl.getInfo(playlistQueue[0], (err, info) => {
       if (err) console.log('No metainfo for the video found');
       else {
         let playbackInfo = 'Now playing **' + info.title + '**\n(' +
           playlistQueue[0].replace(ytHeader, '') + ') ' + info.thumbnail_url;
-        channel.send(playbackInfo);
+        channel.send(playbackInfo)
+          .catch( (reason) => {
+            console.log("Rejected NowPlaying Success Promise for " + reason);
+          });
       }
     });
   }
