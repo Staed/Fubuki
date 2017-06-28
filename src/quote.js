@@ -92,7 +92,8 @@ function addQuote(channel, name, message) {
       };
       quoteList.push(obj);
 
-      jsonfile.writeFileSync('\res\quotes.json', quoteList, {spaces: 2}, (err) => {
+      jsonfile.writeFileSync('\res\quotes.json', quoteList,
+                             {spaces: 2}, (err) => {
         console.log('Could not append quote to file');
         return;
       });
@@ -262,7 +263,8 @@ function deleteQuote(message, cmds) {
         i++;
       }
 
-      jsonfile.writeFileSync('\res\quotes.json', quoteList, {spaces: 2}, (err) => {
+      jsonfile.writeFileSync('\res\quotes.json', quoteList,
+                             {spaces: 2}, (err) => {
         if (err) {
           console.log('Failed to write Quote file: ' + err);
           message.channel.send('Failed to write to file')
