@@ -43,6 +43,14 @@ let misc = require('./misc.js');
       let stats = quotes.defaultKeyStatistics;
 
       let header = quotes.price.longName;
+      if (header == undefined) {
+        header = quotes.price.shortName;
+        header = header.replace(/,.*/, '').trim();
+      }
+
+      if (stats == undefined) {
+        stats = {trailingEps: ' - '};
+      }
 
       let data = [
         ['Previous Close', detail.previousClose,
@@ -102,35 +110,27 @@ function getGoogle(message, company) {
         return;
       }
 
-      let marketData = $('.id-market-data-div');
-
-      let name = $('.g-wrap .g-section .hdg').attr('id', 'companyheader')
-                .find('.g-first h3').text();
+      let name = $('div[id=companyheader]').find('.g-first h3').text();
       name = name.replace(/\xA0.*/, '').trim();
 
+      let marketData = $('.id-market-data-div');
       let currentPrice = marketData.find('.id-price-panel .pr').text().trim();
       let header = '**' + name + '**, currently at ' + currentPrice;
 
-      let stockInfo =
-          marketData.find('.snap-panel-and-plusone .snap-panel .snap-data');
-      let firstRow = stockInfo.find('tr');
-      let secondRow = stockInfo.next().find('tr');
+      let divYield = 'td[data-snapfield=latest_dividend-dividend_yield]';
 
-      let data = [];
-
-      firstRow.each( (cell) => {
-        let label = $(this).find('.key').text().trim();
-        let value = $(this).find('.val').text().trim();
-
-        data.push([label, value]);
-      });
-
-      secondRow.each( (cell) => {
-        let label = $(this).find('.key').text().trim();
-        let value = $(this).find('.val').text().trim();
-
-        data.push([label, value]);
-      });
+      let data = [
+        ['Range', $('td[data-snapfield=range]').next().text().trim()],
+        ['Div/Yield', $(divYield).next().text().trim()],
+        ['52 Week', $('td[data-snapfield=range_52week]').next().text().trim()],
+        ['EPS', $('td[data-snapfield=eps]').next().text().trim()],
+        ['Open', $('td[data-snapfield=open]').next().text().trim()],
+        ['Shares', $('td[data-snapfield=shares]').next().text().trim()],
+        ['Vol / Avg', $('td[data-snapfield=vol_and_avg]').next().text().trim()],
+        ['Beta', $('td[data-snapfield=beta]').next().text().trim()],
+        ['Market Cap', $('td[data-snapfield=market_cap]').next().text().trim()],
+        ['P/E', $('td[data-snapfield=pe_ratio]').next().text().trim()],
+      ];
 
       let output = '```';
       for (let i = 0; i < data.length - 1; i += 2) {
@@ -139,6 +139,10 @@ function getGoogle(message, company) {
         output += misc.padRight(data[i+1][0], 13) + ' ' + data[i+1][1] + '\n';
       }
       output += '```';
+
+      if (output.slice(3, output.length - 3).trim().length < 1) {
+        output = '``` No Data Found ```';
+      }
 
       let logText = 'Recieved request for Google stock data of ';
       logText += company.toUpperCase() + ' aka ' + name;
@@ -204,71 +208,31 @@ function getGoogle(message, company) {
        let header = '**' + name + '**, currently at ' +
                     currentPrice + ' ' + currency;
 
-       let firstRow = [];
-       let secondRow = [];
-       let thirdRow = [];
-       let fourthRow = [];
-       let fifthRow = [];
-       let sixthRow = [];
+       let data = [];
 
-       let detailedQuote = $('.detailed-quote .data-table .cell');
-       detailedQuote.each( (cell) => {
-         let label = $(this).find('.cell__label').text().trim();
+       let table = $('.data-table_detailed');
+       table.find('.cell').each( (i, cell) => {
+         let label = $(cell).find('.cell__label').text().trim();
+         let value = $(cell).find('.cell__value').text().trim();
 
-         let value = '.cell__value';
-
-         if (/.*p\/e ratio.*/i.test(label)) {
-           fourthRow.unshift('PE Ratio (TTM)',
-                             $(this).find(value).text().trim());
-         } else if (/earnings per share.*/i.test(label)) {
-           fourthRow.push('EPS (TTM)', $(this).find(value).text().trim());
-         } else if (/market cap .*/i.test(label)) {
-           fifthRow.unshift(label, $(this).find(value).text().trim());
-         } else if (/shares.*/i.test(label)) {
-           sixthRow.unshift('O/S (m)', $(this).find(value).text().trim());
-         } else if (/price\/sales.*/i.test(label)) {
-           sixthRow.push('PSR', $(this).find(value).text().trim());
-         } else {
-           switch (label.toLowerCase()) {
-             case 'open':
-              firstRow.unshift(label, $(this).find(value).text().trim());
-              break;
-             case 'day range':
-              firstRow.push(label, $(this).find(value).text().trim());
-              break;
-             case 'volume':
-              fifthRow.push(label, $(this).find(value).text().trim());
-              break;
-             case 'previous close':
-              secondRow.unshift(label, $(this).find(value).text().trim());
-              break;
-             case '52wk range':
-              secondRow.push(label, $(this).find(value).text().trim());
-              break;
-             case '1 yr return':
-              thirdRow.unshift(label, $(this).find(value).text().trim());
-              break;
-             case 'ytd return':
-              thirdRow.push(label, $(this).find(value).text().trim());
-              break;
-             default:
-           }
+         if (/Earnings per Share/.test(label)) {
+           label = 'EPS (USD) (TTM)';
          }
+         if (/Shares Outstanding/.test(label)) {
+           label = 'Shares (m)';
+         }
+         if (/Current P\/E Ratio/.test(label)) {
+           label = 'PE Ratio (TTM)';
+         }
+
+         data.push([label, value]);
        });
 
-       let data = [];
-       data.push(firstRow);
-       data.push(secondRow);
-       data.push(thirdRow);
-       data.push(fourthRow);
-       data.push(fifthRow);
-       data.push(sixthRow);
-
        let output = '```';
-       for (let i = 0; i < data.length; i++) {
-         output += misc.padRight(data[i][0], 20) + ' ';
-         output += misc.padRight(data[i][1], 17) + ' ';
-         output += misc.padRight(data[i][2], 13) + ' ' + data[i][3] + '\n';
+       for (let i = 0; i < data.length - 1; i += 2) {
+         output += misc.padRight(data[i][0], 17) + ' ';
+         output += misc.padRight(data[i][1], 20) + ' ';
+         output += misc.padRight(data[i+1][0], 20) + ' ' + data[i+1][1] + '\n';
        }
        output += '```';
 

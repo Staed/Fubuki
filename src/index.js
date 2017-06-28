@@ -108,6 +108,9 @@ FUBUKI.on('message', (message) => {
       case '!urban':
         misc.urbanDefine(message, cmds);
         break;
+      case '!avatar':
+        misc.getAvatar(message, cmds);
+        break;
       case '!a':
         misc.getAvatar(message, cmds);
         break;
