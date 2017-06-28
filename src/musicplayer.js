@@ -68,7 +68,7 @@ function play(message) {
       if (playlistQueue.length > 1) {
         message.channel.send('Added **' + info.title + '** to the queue.')
           .catch( (reason) => {
-            console.log("Rejected Play AddSuccess Promise for " + reason);
+            console.log('Rejected Play AddSuccess Promise for ' + reason);
           });
       }
     }
@@ -104,7 +104,7 @@ function playQueued(nextVid, message) {
 
               message.channel.send(playbackInfo)
                 .catch( (reason) => {
-                  console.log("Rejected PlayQueued GetInfo Promise for " +
+                  console.log('Rejected PlayQueued GetInfo Promise for ' +
                               reason);
                 });
             }
@@ -123,10 +123,10 @@ function playQueued(nextVid, message) {
           });
         })
         .catch( (err) => {
-          console.log("Couldnt' connect to voice channel: " + err);
-          message.channel.send("Could not connect to a voice channel")
+          console.log('Couldnt connect to voice channel: ' + err);
+          message.channel.send('Could not connect to a voice channel')
             .catch( (reason) => {
-              console.log("Rejected PlayQueued Fail Promise for " + reason);
+              console.log('Rejected PlayQueued Fail Promise for ' + reason);
             });
         });
     } else {
@@ -140,7 +140,7 @@ function playQueued(nextVid, message) {
 
           message.channel.send(playbackInfo)
             .catch( (reason) => {
-              console.log("Rejected PlayQueued Success Promise for " + reason);
+              console.log('Rejected PlayQueued Success Promise for ' + reason);
             });
         }
       });
@@ -178,7 +178,7 @@ function skip(message) {
   console.log(playlistQueue[0].replace(ytHeader, '') + ' skipped');
   message.channel.send('Skipping song.')
     .catch( (reason) => {
-      console.log("Rejected Skip Success Promise for " + reason);
+      console.log('Rejected Skip Success Promise for ' + reason);
     });
   dispatcher.end();
 }
@@ -199,7 +199,7 @@ function repeat(message) {
       else {
         message.channel.send('Added **' + info.title + '** to the queue.')
           .catch( (reason) => {
-            console.log("Rejected Repeat Success Promise for " + reason);
+            console.log('Rejected Repeat Success Promise for ' + reason);
           });
       }
     });
@@ -213,7 +213,7 @@ function nowPlaying(channel) {
   if (playlistQueue.length === 0) {
     channel.send('Nothing is being played but my heart.')
       .catch( (reason) => {
-        console.log("rejected NowPlaying Empty Promise for " + reason);
+        console.log('Rejected NowPlaying Empty Promise for ' + reason);
       });
   } else {
     ytdl.getInfo(playlistQueue[0], (err, info) => {
@@ -223,7 +223,7 @@ function nowPlaying(channel) {
           playlistQueue[0].replace(ytHeader, '') + ') ' + info.thumbnail_url;
         channel.send(playbackInfo)
           .catch( (reason) => {
-            console.log("Rejected NowPlaying Success Promise for " + reason);
+            console.log('Rejected NowPlaying Success Promise for ' + reason);
           });
       }
     });
