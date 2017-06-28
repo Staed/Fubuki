@@ -35,9 +35,9 @@ Features
 
 Installation
 ------------
-The latest stable release is [here] (https://github.com/Staed/Fubuki/releases/latest). <br />
+The latest stable release is [here](https://github.com/Staed/Fubuki/releases/latest). <br />
 Simply unzip into the folder of choice and run `npm start`
 
 License
 -------
-Released under the [MIT License] (LICENSE).
+Released under the [MIT License](LICENSE).
