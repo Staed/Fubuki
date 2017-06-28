@@ -1,6 +1,8 @@
 let config = require('./config');
 let jsonfile = require('jsonfile');
 
+let misc = require('./misc');
+
 /**
  *  @param {Collection<Snowflake, GuildMember>} members  A Map of [user id : member object]
  *  @param {int} index The index in cmds where this @mention is found
@@ -172,7 +174,7 @@ function checkPermission(message, permission) {
  */
 function listQuotes(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
-    fs.readFile("quotes.txt", function(err, text) {
+    jsonfile.readFile("\quotes.json", function(err, quote_list) {
       if (err) {
         console.log("Failed to read Quote file: " + err);
         message.channel.send("Failed to find a quote")
@@ -180,12 +182,13 @@ function listQuotes(message, cmds) {
         return;
       }
 
-      let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
       let list = '';
-      for (let i = 0; i < entries.length - 2; i += 3) {
-        if (message.guild.id == entries[i]) {
-          list += (i/3 + 1) + ". " +  entries[i+1] + '\t - \"' + entries[i+2] + "\"\n";
+      let i = 0;
+      for (let entry of quote_list) {
+        if (message.guild.id == entry.guild) {
+          list += misc.padRight(i + ". ", 5) + misc.padRight(entry.name, 18) + " - \" " + entry.content + " \"\n";
         }
+        i++;
       }
       message.channel.send(list)
         .catch( reason => { console.log("Rejected Quote ListPrint Promise for " + reason); });
@@ -202,9 +205,7 @@ function listQuotes(message, cmds) {
  */
 function deleteQuote(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
-    let new_entries = '';
-
-    fs.readFile("quotes.txt", function(err, text) {
+    jsonfile.readFile("\quotes.json", function(err, quote_list) {
       if (err) {
         console.log("Failed to read Quote file: " + err);
         message.channel.send("Failed to find a quote")
@@ -212,32 +213,28 @@ function deleteQuote(message, cmds) {
         return;
       }
 
-      let entries = text.toString().replace(/[\r\n]+/ig, ":::").split(/:{3}/);
-      let quotes = [];
-      for (let i = 0; i < entries.length - 2; i += 3) {
-        if(i == 3*(cmds[2] - 1)) {
-          if (message.guild.id != entries[i]) {
+      let i = 0;
+      for (let entry of quote_list) {
+        if (i == cmds[2]) {
+          if (message.guild.id != entry.guild) {
             message.channel.send("You can't delete quotes from outside this server")
               .catch( reason => { console.log("Rejected Quote Delete NotSameGuild Promise for " + reason); });
             console.log("Blocked attempt to delete quote from another server");
             return;
           }
-          continue;
+
+          quote_list.splice(i, 1);
+          break;
         }
-        let entry = [entries[i], entries[i+1], entries[i+2]];
-        quotes.push(entry);
+        i++;
       }
 
-      for (let [guild, name, text] of quotes) {
-        new_entries += guild + ":::" + name + ":::" + text + "\n"
-      }
-      new_entries = new_entries.substring(0, new_entries.length);
-
-      fs.writeFile("quotes.txt", new_entries, function(err) {
+      jsonfile.writeFileSync('\quotes.json', quote_list, {spaces: 2}, function(err) {
         if (err) {
           console.log("Failed to write Quote file: " + err);
           message.channel.send("Failed to write to file")
             .catch( reason => { console.log("Rejected Quote DeleteWrite Promise for " + reason); });
+          return;
         }
       });
 

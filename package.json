@@ -19,7 +19,8 @@
     "ytdl-core": "*",
     "opusscript": "*",
     "cheerio": "*",
-    "jsonfile": "3.x"
+    "jsonfile": "3.x",
+    "yahoo_finance": ">=0.3.2"
   },
   "keywords": [
     "discord",

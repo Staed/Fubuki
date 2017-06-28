@@ -181,4 +181,18 @@ function deleteBooru(message) {
     });
 }
 
- module.exports = {urbanDefine, getAvatar, coinFlip, rate, getOptions, deleteBooru};
+/**
+ * @param {string} orig  The original string
+ * @param {int} target_length  The length of the resulting string once the current string has been padded
+ * @return {string} The original string with the padding added
+ */
+ function padRight(orig, target_length) {
+   let text = orig;
+   while (text.length < target_length) {
+     text += " ";
+   }
+
+   return text;
+ }
+
+ module.exports = {urbanDefine, getAvatar, coinFlip, rate, getOptions, deleteBooru, padRight};

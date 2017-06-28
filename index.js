@@ -109,7 +109,12 @@ FUBUKI.on('message', message => {
         }
         break;
       case '!stock':
-        finance.getStock(message, cmds[1]);
+        if (cmds[1] == undefined || cmds[2] == undefined) {
+          message.channel.send("You need to specify which market API (bloomberg/google/yahoo) and company ticker name")
+            .catch( reason => { console.log("Rejected Stock BadParams Promise for " + reason); });
+        } else {
+          finance.getStock(message, cmds[1], cmds[2].toUpperCase());
+        }
         break;
       case '!delete':
         misc.deleteBooru(message);
