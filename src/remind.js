@@ -40,7 +40,7 @@ function remindMe(message) {
   }
 
   let remindInput = new RegExp([
-    '([\\s]+in[\\s]+\d+[\\s]+(hour(s)?|minute(s)?))',
+    '([\\s]+in[\\s]+\\d+[\\s]+(hour(s)?|minute(s)?))',
     '([\\s](and)[\\s]+)?(\\d+[\\s](hour(s)?|minute(s)?))?[\\s]*$',
   ].join(''), 'ig');
   let remindText = message.content.replace(remindInput, '');
