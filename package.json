@@ -1,16 +1,24 @@
 {
   "name": "discord-fubuki",
-  "version": "0.5",
-  "description": "A bot for the ages.",
+  "version": "0.5.0",
+  "description": "A discord bot for the designed for utility",
+  "keywords": [
+    "discord",
+    "bot",
+    "node"
+  ],
+  "bugs": "https://github.com/Staed/Fubuki/issues",
+  "license": "BSD-3-Clause",
   "author": {
     "name": "Staed"
   },
-  "engines": {
-    "node": ">=7.0.0"
-  },
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
-    "start": "node index.js"
+    "test": "npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Staed/Fubuki.git"
   },
   "dependencies": {
     "discord.js": "11.x",
@@ -20,10 +28,16 @@
     "opusscript": "*",
     "cheerio": "*",
     "jsonfile": "3.x",
-    "yahoo_finance": ">=0.3.2"
+    "yahoo-finance": ">=0.3.2"
   },
-  "keywords": [
-    "discord",
-    "bot"
-  ]
+  "devDependencies": {
+    "@types/node": "^8.0.4",
+    "eslint": "^4.1.1",
+    "eslint-config-google": "^0.8.0",
+    "generator-eslint": "^1.2.0",
+    "yo": "^2.0.0"
+  },
+  "engines": {
+    "node": "^8.1.2"
+  }
 }
