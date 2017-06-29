@@ -94,16 +94,18 @@ FUBUKI.on('message', (message) => {
         break;
       case '!radio':
         musicPlayer.radio(message);
-        message.delete()
-          .then( (msg) => {
-            console.log('Deleted message from ' + msg.author);
-          })
-          .catch( (reason) => {
-            console.log('Rejected Radio Delete Promise for ' + reason);
-          });
+        if (/youtube.com/.test(message.content)) {
+          message.delete()
+            .then( (msg) => {
+              console.log('Deleted message from ' + msg.author);
+            })
+            .catch( (reason) => {
+              console.log('Rejected Radio Delete Promise for ' + reason);
+            });
+        }
         break;
       case '!stopradio':
-        musicPlayer.stopRadio();
+        musicPlayer.stopRadio(message.guild);
         break;
       case '!urban':
         misc.urbanDefine(message, cmds);
