@@ -5,7 +5,6 @@ let lastPlayed = '';
 let playlistQueue = [];
 let dispatcher = null;
 let ytHeader = /http(s?):\/\/(www.)?youtube.com\/watch\?v=/;
-let playingRadio = false;
 
 /**
  * @param {guild} guild - The guild that the command orignated from
@@ -42,7 +41,6 @@ function disconnect(guild) {
   voiceLeave.leave();
   console.log('Left the voice in ' + guild.name);
   playlistQueue = [];
-  playingRadio = false;
 }
 
 /**
@@ -56,6 +54,12 @@ function play(message) {
         console.log('Rejected Music PlayUndefined Promise for ' + reason);
       });
     console.log('Blank URL, command skipped');
+    return;
+  }
+
+  if (!/youtube.com/.test(nextVid)) {
+    message.channel.send('You can only play from youtube videos right now!')
+      .catch( (err) => console.log(err));
     return;
   }
 
@@ -234,55 +238,67 @@ function nowPlaying(channel) {
  * @param {message} message
  */
 function radio(message) {
-  playingRadio = true;
-  repeatRadio(message);
-}
+  let url = message.content.split(' ')[1];
+  let startLen = 0;
 
-/**
- * @param {message} message
- */
-function repeatRadio(message) {
-  if (playingRadio === false) return;
-  let radioLink = message.content.split(' ')[1];
-  if (radioLink === null) return; // Handle non-youtube radios here eventually
-
-  const STREAMOPTIONS = {seek: 0, volume: 1};
-  const STREAM = ytdl(radioLink, {filter: 'audioonly'});
-
-  if (message.guild.voiceConnection === null) {
-    connect(message.guild)
-      .then( (connection) => {
-        dispatcher = connection.playStream(STREAM, STREAMOPTIONS);
-
-        dispatcher.on('end', () => {
-          dispatcher = null;
-          repeatRadio(message);
-        });
-
-        dispatcher.on('error', (err) => {
-          console.log(err);
-        });
-      });
+  if (!/youtube.com/.test(url)) {
+    message.channel.send('Sorry, but I can only play ' +
+                         'youtube live streams for now')
+      .catch( (err) => console.log(err));
   } else {
-    dispatcher =
-        message.guild.voiceConnection.playStream(STREAM, STREAMOPTIONS);
+    message.channel.send('Attempting to play stream at: ' +
+                         url.replace('https://www.', ''))
+      .catch( (err) => console.log(err));
 
-    dispatcher.on('end', () => {
-      dispatcher = null;
-      repeatRadio(message);
-    });
+    ytdl.getInfo(url, (err, info) => {
+      if (err) console.log('No metainfo for the video found');
+      else {
+        for (format of info.formats) {
+          if (format.max_dvr_duration_sec != undefined) {
+            startLen = Math.max(0, format.max_dvr_duration_sec - 5);
+            break;
+          }
+        }
+      }
 
-    dispatcher.on('error', (err) => {
-      console.log(err);
+      let streamOpt = {range: {start: startLen, end: 999999}, quality: 93};
+      const stream = ytdl(url, streamOpt);
+      connect(message.guild)
+        .then( (connection) => {
+          playlistQueue = [url];
+          dispatcher = connection.playStream(stream);
+
+          message.channel.send('Cleared the playlist to play the radio')
+            .catch( (err) => console.log(err));
+
+          let playbackInfo = ':play_pause: Playing radio at ** ' + info.title +
+              + url.replace(ytHeader, '') + ' ' + info.thumbnail_url;
+
+          message.channel.send(playbackInfo)
+              .catch( (reason) => {
+                console.log('Rejected PlayQueued GetInfo Promise for ' +
+                            reason);
+              });
+
+          dispatcher.on('end', () => {
+            dispatcher = null;
+            playNext(message);
+          });
+
+          dispatcher.on('error', (err) => {
+            console.log(err);
+          });
+        })
+        .catch( (err) => console.log(err) );
     });
   }
 }
 
 /**
- *
+ * @param {guild} guild  The guild from which to disconnect
  */
-function stopRadio() {
-  playingRadio = false;
+function stopRadio(guild) {
+  disconnect(guild);
 }
 
 module.exports = {

@@ -23,14 +23,14 @@
     "url": "https://github.com/Staed/Fubuki.git"
   },
   "dependencies": {
+    "cheerio": "*",
     "discord.js": "11.x",
+    "jsonfile": "3.x",
+    "opusscript": "*",
     "request": "2.x",
     "request-promise": "4.x",
-    "ytdl-core": "*",
-    "opusscript": "*",
-    "cheerio": "*",
-    "jsonfile": "3.x",
-    "yahoo-finance": ">=0.3.2"
+    "yahoo-finance": ">=0.3.2",
+    "ytdl-core": "^0.14.4"
   },
   "devDependencies": {
     "@types/node": "^8.0.4",
