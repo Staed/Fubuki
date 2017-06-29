@@ -247,7 +247,7 @@ function radio(message) {
       .catch( (err) => console.log(err));
   } else {
     message.channel.send('Attempting to play stream at: ' +
-                         url.replace('https://www.', ''))
+                         url.replace(/http(s)+?:\/\/(www\.)?/, ''))
       .catch( (err) => console.log(err));
 
     ytdl.getInfo(url, (err, info) => {
@@ -261,7 +261,7 @@ function radio(message) {
         }
       }
 
-      let streamOpt = {range: {start: startLen, end: 999999}, quality: 93};
+      let streamOpt = {/*range: {start: startLen, end: 999999},*/ quality: 93};
       const stream = ytdl(url, streamOpt);
       connect(message.guild)
         .then( (connection) => {
@@ -271,8 +271,10 @@ function radio(message) {
           message.channel.send('Cleared the playlist to play the radio')
             .catch( (err) => console.log(err));
 
-          let playbackInfo = ':play_pause: Playing radio at ** ' + info.title +
-              + url.replace(ytHeader, '') + ' ' + info.thumbnail_url;
+          let minHeader = /http(s)+?:\/\/(www\.)?(youtube.com)?/;
+          let playbackInfo = ':play_pause: Playing **' + info.title +
+              '** radio (' + url.replace(minHeader, '') + ') ' +
+              info.thumbnail_url;
 
           message.channel.send(playbackInfo)
               .catch( (reason) => {
