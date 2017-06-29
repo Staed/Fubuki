@@ -239,7 +239,7 @@ function nowPlaying(channel) {
  */
 function radio(message) {
   let url = message.content.split(' ')[1];
-  let startLen = 0;
+  // let startLen = 0;
 
   if (!/youtube.com/.test(url)) {
     message.channel.send('Sorry, but I can only play ' +
@@ -261,7 +261,8 @@ function radio(message) {
         }
       }
 
-      let streamOpt = {/*range: {start: startLen, end: 999999},*/ quality: 93};
+      // range: {start: startLen, end: 999999},
+      let streamOpt = {quality: 93};
       const stream = ytdl(url, streamOpt);
       connect(message.guild)
         .then( (connection) => {
