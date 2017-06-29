@@ -78,7 +78,7 @@ function addQuote(channel, name, message) {
   if (message != null && message.guild != undefined) {
     let quoteList = [];
 
-    jsonfile.readFile('\res\quotes.json', (err, data) => {
+    jsonfile.readFile('src\\res\\quotes.json', (err, data) => {
       if (err) {
         console.log('Could not read file');
         return;
@@ -92,7 +92,7 @@ function addQuote(channel, name, message) {
       };
       quoteList.push(obj);
 
-      jsonfile.writeFileSync('\res\quotes.json', quoteList,
+      jsonfile.writeFileSync('src\\res\\quotes.json', quoteList,
                              {spaces: 2}, (err) => {
         console.log('Could not append quote to file');
         return;
@@ -144,9 +144,9 @@ function addUserQuote(message, capitalCmds) {
  *  @param {string[]} capitalCmds - Strings containing parameters
  */
 function searchQuote(message, capitalCmds) {
-  jsonfile.readFile('\res\quotes.json', (err, quoteList) => {
+  jsonfile.readFile('src\\res\\quotes.json', (err, quoteList) => {
     if (err) {
-      console.log('Could not read file');
+      console.log('Could not read file: ' + err);
       return;
     }
 
@@ -195,7 +195,7 @@ function checkPermission(message, permission) {
  */
 function listQuotes(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
-    jsonfile.readFile('\res\quotes.json', (err, quoteList) => {
+    jsonfile.readFile('src\\res\\quotes.json', (err, quoteList) => {
       if (err) {
         console.log('Failed to read Quote file: ' + err);
         message.channel.send('Failed to find a quote')
@@ -233,7 +233,7 @@ function listQuotes(message, cmds) {
  */
 function deleteQuote(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
-    jsonfile.readFile('\res\quotes.json', (err, quoteList) => {
+    jsonfile.readFile('src\\res\\quotes.json', (err, quoteList) => {
       if (err) {
         console.log('Failed to read Quote file: ' + err);
         message.channel.send('Failed to find a quote')
@@ -263,7 +263,7 @@ function deleteQuote(message, cmds) {
         i++;
       }
 
-      jsonfile.writeFileSync('\res\quotes.json', quoteList,
+      jsonfile.writeFileSync('src\\res\\quotes.json', quoteList,
                              {spaces: 2}, (err) => {
         if (err) {
           console.log('Failed to write Quote file: ' + err);
