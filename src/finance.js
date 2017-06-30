@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This file contains functions that return a formated "quote"
+ * of the company associated with the ticker name passed in.
+ * @package request-promise cheerio yahoo-finance
+ */
+
 let config = require('../config');
 let request = require('request-promise');
 let cheerio = require('cheerio');
@@ -5,7 +11,10 @@ let yahooFinance = require('yahoo-finance');
 let misc = require('./misc.js');
 
 /**
- * @param {message} message - A message object as defined in discord.js
+ * Upon recieving a call to this function, it attempts to respond with the
+ * corresponding API call.
+ *
+ * @param {message} message - The original message object prompting this call
  * @param {string} apiName - Name of the stock API to use
  * @param {string} company - Ticker symbol for a company on the stock market
  */
@@ -30,7 +39,10 @@ let misc = require('./misc.js');
  }
 
  /**
-  * @param {message} message - A message object as defined in discord.js
+  * Using the yahoo-finance module, this function extracts the desired info
+  * into a string. the string reply is formatted into a table by padding.
+  *
+  * @param {message} message - The original message object prompting this call
   * @param {string} company - Ticker symbol for a company on the stock market
   */
   function getYahoo(message, company) {
@@ -48,6 +60,10 @@ let misc = require('./misc.js');
         header = header.replace(/,.*/, '').trim();
       }
 
+      /**
+       * TODO: Consider iterating through {@code detail} and {@code stats}
+       * This would be to check for and correct all undefined values.
+       */
       if (stats == undefined) {
         stats = {trailingEps: ' - '};
       }
@@ -86,7 +102,12 @@ let misc = require('./misc.js');
   }
 
  /**
-  * @param {message} message - A message object as defined in discord.js
+  * Because there's a lack of a decent Google Finance API due to the offical
+  * API having been disabled by Google, this function pieces together the
+  * stock quote via web scraping. The resulting data is formatted into a
+  * table via padding and sent by {@code message.channel.send()}
+  *
+  * @param {message} message - The original message object prompting this call
   * @param {string} company - Ticker symbol for a company on the stock market
   */
 function getGoogle(message, company) {
@@ -110,6 +131,7 @@ function getGoogle(message, company) {
         return;
       }
 
+      // Begin scraping from the Google Finance website
       let name = $('div[id=companyheader]').find('.g-first h3').text();
       name = name.replace(/\xA0.*/, '').trim();
 
@@ -132,6 +154,7 @@ function getGoogle(message, company) {
         ['P/E', $('td[data-snapfield=pe_ratio]').next().text().trim()],
       ];
 
+      // Format the data gotten into a tidy string table, then reply with it
       let output = '```';
       for (let i = 0; i < data.length - 1; i += 2) {
         output += misc.padRight(data[i][0], 12) + ' ';
@@ -168,6 +191,11 @@ function getGoogle(message, company) {
 }
 
  /**
+  * Much like {@code getGoogle()}, this function gathers the necessary stock
+  * quote information by web scraping. This is due to the offical Bloomberg API
+  * requiring payment and Fubuki is meant to be free as in speech.
+  * @see getGoogle
+  *
   * @param {message} message - A message object as defined in discord.js
   * @param {string} company - Ticker symbol for a company on the stock market
   */
@@ -200,6 +228,7 @@ function getGoogle(message, company) {
          return;
        }
 
+       // Begin scraping from Bloomberg's website
        let name = $('.basic-quote h1.name').text().trim();
        let currency =
           $('.basic-quote .price-container .currency').text().trim();
@@ -215,6 +244,7 @@ function getGoogle(message, company) {
          let label = $(cell).find('.cell__label').text().trim();
          let value = $(cell).find('.cell__value').text().trim();
 
+         // Shorten the labels so they don't take up too much space in the table
          if (/Earnings per Share/.test(label)) {
            label = 'EPS (USD) (TTM)';
          }
@@ -228,6 +258,7 @@ function getGoogle(message, company) {
          data.push([label, value]);
        });
 
+       // Format the data gotten into a tidy string table, then reply with it
        let output = '```';
        for (let i = 0; i < data.length - 1; i += 2) {
          output += misc.padRight(data[i][0], 17) + ' ';

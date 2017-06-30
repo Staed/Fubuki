@@ -1,3 +1,8 @@
+/**
+ * This file contains all the youtube playback features of Fubuki.
+ * @package ytdl-core
+ */
+
 let config = require('../config');
 const ytdl = require('ytdl-core');
 
@@ -7,6 +12,10 @@ let dispatcher = null;
 let ytHeader = /http(s?):\/\/(www.)?youtube.com\/watch\?v=/;
 
 /**
+ * Attempts to connect to the default voice channelspecified in config.js and
+ * connects to the first avalible voice channel if that fails. The returned
+ * VoiceConnection object is necessary to send audio to Discord.
+ *
  * @param {guild} guild - The guild that the command orignated from
  * @return {Promise<VoiceConnection>}
  */
@@ -30,7 +39,9 @@ function connect(guild) {
   }
 }
 
-/** Ends the voice channel and clears the playlist queue
+/**
+ * Exits the current voice channel of that server and clears the playlist queue
+ *
  * @param {guild} guild - The guild that the command orignated from
  */
 function disconnect(guild) {
@@ -44,7 +55,9 @@ function disconnect(guild) {
 }
 
 /**
- * @param {message} message - A message object as defined in discord.js
+ * Adds youtube videos to the playlist which will be played later
+ *
+ * @param {message} message - The original message object prompting this call
  */
 function play(message) {
   let nextVid = message.content.split(' ')[1];
@@ -78,14 +91,19 @@ function play(message) {
     }
   });
 
+  // Used to start the queue consumption if it wasn't active already
   if (playlistQueue.length <= 1) {
     playQueued(playlistQueue[0], message);
   }
 }
 
 /**
+ * Extracts the youtube URL from the front of the queue and connects the audio
+ * of that video to the audio stream in Discord. It will continue to play the
+ * videos one-by-one until the queue is empty.
+ *
  * @param {string} nextVid - The URL string to the next video
- * @param {message} message - A message object as defined in discord.js
+ * @param {message} message - The original message object prompting this call
  */
 function playQueued(nextVid, message) {
   const STREAMOPTIONS = {seek: 0, volume: 1};
@@ -94,6 +112,7 @@ function playQueued(nextVid, message) {
     const STREAM = ytdl(nextVid, {filter: 'audioonly'});
 
     if (message.guild.voiceConnection === null) {
+      // Initial voice channel connections are made
       connect(message.guild)
         .then( (connection) => {
           console.log('Now Playing: ' + nextVid.replace(ytHeader, ''));
@@ -134,6 +153,7 @@ function playQueued(nextVid, message) {
             });
         });
     } else {
+      // In this case the connection was already established
       ytdl.getInfo(nextVid, (err, info) => {
         if (err) console.log('No metainfo for the video found');
         else {
@@ -165,7 +185,9 @@ function playQueued(nextVid, message) {
 }
 
 /**
- * @param {message} message - A message object as defined in discord.js
+ * Dequeues and calls {@playQueued} to consume the next element in the queue
+ *
+ * @param {message} message - The original message object prompting this call
  */
 function playNext(message) {
   playlistQueue.shift();
@@ -176,7 +198,10 @@ function playNext(message) {
 }
 
 /**
- * @param {message} message
+ * Skips the playback of the front element of the queue by dequeuing it and
+ * ending the audio stream to Discord
+ *
+ * @param {message} message - The original message object prompting this call
  */
 function skip(message) {
   console.log(playlistQueue[0].replace(ytHeader, '') + ' skipped');
@@ -188,7 +213,9 @@ function skip(message) {
 }
 
 /**
- * @param {message} message
+ * Simply adds another copy of the front of the queue to the back of the queue
+ *
+ * @param {message} message - The original message object prompting this call
  */
 function repeat(message) {
   message.content = '!play ' + lastPlayed;
@@ -211,6 +238,9 @@ function repeat(message) {
 }
 
 /**
+ * Requests the information on the youtube video at the URL at the front of the
+ * queue and replies with it.
+ *
  * @param {channel} channel - The channel from which the message orignated
  */
 function nowPlaying(channel) {
@@ -235,11 +265,14 @@ function nowPlaying(channel) {
 }
 
 /**
- * @param {message} message
+ * Streams a live youtube video from the beginning of the video session.
+ * {@code ytdl-core} doesn't currently support playback at the current timestap
+ * of the live video.
+ *
+ * @param {message} message - The original message object prompting this call
  */
 function radio(message) {
   let url = message.content.split(' ')[1];
-  // let startLen = 0;
 
   if (!/youtube.com/.test(url)) {
     message.channel.send('Sorry, but I can only play ' +
@@ -261,7 +294,11 @@ function radio(message) {
         }
       }
 
-      // range: {start: startLen, end: 999999},
+      /**
+       *  93 refers to itag 93 which denotes a live stream. Higher quality is
+       * avoided due to live streams not always having such high quality.
+       */
+
       let streamOpt = {quality: 93};
       const stream = ytdl(url, streamOpt);
       connect(message.guild)
@@ -298,6 +335,8 @@ function radio(message) {
 }
 
 /**
+ * Ends the connection to the voice channel in Discord
+ *
  * @param {guild} guild  The guild from which to disconnect
  */
 function stopRadio(guild) {

@@ -1,12 +1,25 @@
+/**
+ * This file handles storing and retrieving quotes. The quotes are stored as a
+ * json on the file system to perserve information across different sessions.
+ * Quotes are simply objects containing a quote, an author, and a guild ID.
+ * This allows the quotes to be searched via the Discord server they were said
+ * on as well as by author and/or content.
+ * @package jsonfile
+ */
 let jsonfile = require('jsonfile');
 
 let misc = require('./misc');
 
 /**
- *  @param {Collection.<Snowflake, GuildMember>} members - A Map of (id, member)
- *  @param {number} index - The index in cmds where this @mention is found
- *  @param {string[]} capitalCmds - Strings containing parameters
- *  @return {string[]}
+ * Given a set of member objects, this function attempts to retrieve the
+ * correct usernames. Because the set of member objects uses a member ID as the
+ * key and this is will not be known by users, some processing must be done
+ * to the parameters to retrieve the correc information
+ *
+ * @param {Collection.<Snowflake, GuildMember>} members - A Map of (id, member)
+ * @param {number} index - The index in cmds where this @mention is found
+ * @param {string[]} capitalCmds - Strings containing parameters
+ * @return {string[]}
  */
 function matchMention(members, index, capitalCmds) {
   let user = capitalCmds[index];
@@ -15,6 +28,7 @@ function matchMention(members, index, capitalCmds) {
 
   if (capitalCmds.length > index) {
     if (/<@.?\d+>/.test(user)) {
+      // The parameter matched an @mention as described by Discord
       let userId = user.replace(/\D/g, '');
       let member = members.get(userId);
       displayName = member.display_name;
@@ -37,12 +51,18 @@ function matchMention(members, index, capitalCmds) {
     }
   }
 
+  /**
+   * The display name for any specific user can vary between Discord servers,
+   * so we want to return both the nickname and the true name.
+   */
   return [displayName, username];
 }
 
 /**
- *  @param {channel} channel - The channel where the message originated
- *  @param {string[]} quotes - String arrays containing [username, text]
+ * Selects a random element from the set passed in and replies on the channel
+ *
+ * @param {channel} channel - The channel from which the message originated
+ * @param {string[]} quotes - String arrays containing [username, text]
  */
 function selectRandomQuote(channel, quotes) {
   if (!Object.keys(quotes).length) {
@@ -70,9 +90,12 @@ function selectRandomQuote(channel, quotes) {
 }
 
 /**
- *  @param {channel} channel - The channel where the message originated
- *  @param {string} name - The username
- *  @param {message} message - The last message from that username
+ * Adds a quote object which contains the content, author name, and guild ID to
+ * an existing file on the filesystem
+ *
+ * @param {channel} channel - The channel where the message originated
+ * @param {string} name - The username
+ * @param {message} message - The last message from that username
  */
 function addQuote(channel, name, message) {
   if (message != null && message.guild != undefined) {
@@ -83,6 +106,11 @@ function addQuote(channel, name, message) {
         console.log('Could not read file');
         return;
       }
+      /**
+       * TODO: Look into simply deleting the last characters of the file and
+       * appending the new quote object. The current system of recreating the
+       * entire json array is inefficient - O(n)
+       */
       quoteList = data;
 
       obj = {
@@ -115,8 +143,13 @@ function addQuote(channel, name, message) {
 }
 
 /**
- *  @param {message} message - A message object as defined in discord.js
- *  @param {string[]} capitalCmds - Strings containing parameters
+ * Upon getting the name of a user in the guild, searches for a proper message
+ * from that user in the last hundred messages of the channel. A proper message
+ * is any that isn't some form of a !quote command, which is what called this
+ * function in the first place.
+ *
+ * @param {message} message - The original message object prompting this call
+ * @param {string[]} capitalCmds - Strings forming the name of the quotee
  */
 function addUserQuote(message, capitalCmds) {
   let name = matchMention(message.guild.members, 2, capitalCmds);
@@ -140,8 +173,13 @@ function addUserQuote(message, capitalCmds) {
 }
 
 /**
- *  @param {message} message - A message object as defined in discord.js
- *  @param {string[]} capitalCmds - Strings containing parameters
+ * Reads the quote json from the filesystem and populates the temporary array
+ * of quotes. The populating of the array is filtered by the parameters passed
+ * in. In this case, whether or not the name of a user whose quote is getting
+ * recieved  was given.
+ *
+ *  @param {message} message - The original message object prompting this call
+ *  @param {string[]} capitalCmds - Array of strings containing the parameters
  */
 function searchQuote(message, capitalCmds) {
   jsonfile.readFile('src\\res\\quotes.json', (err, quoteList) => {
@@ -151,7 +189,6 @@ function searchQuote(message, capitalCmds) {
     }
 
     let quotes = [];
-
     let name = matchMention(message.guild.members, 1, capitalCmds);
 
     for (let entry of quoteList) {
@@ -167,9 +204,12 @@ function searchQuote(message, capitalCmds) {
 }
 
 /**
- * @param {message} message - A message object as defined in discord.js
+ * Upon receiving an author and permission level, checks if that author is in
+ * the list of people with at least that permission level in that guild.
+ *
+ * @param {message} message - The original message object prompting this call
  * @param {PermissionResolvable} permission - The permission level required
- * @return {boolean}
+ * @return {boolean} Whether of not the author has the proper permission
  */
 function checkPermission(message, permission) {
   let admins = [];
@@ -190,8 +230,12 @@ function checkPermission(message, permission) {
 }
 
 /**
- *  @param {message} message - A message object as defined in discord.js
- *  @param {string[]} cmds - Strings containing parameters
+ * Checks whether the requester has the ADMIN permission level to list out
+ * all the quotes from the file that belong to this guild. If they do, the
+ * quotes are printed out along with their index numbers.
+ *
+ * @param {message} message - The original message object prompting this call
+ * @param {string[]} cmds - Strings containing parameters
  */
 function listQuotes(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
@@ -228,8 +272,12 @@ function listQuotes(message, cmds) {
 }
 
 /**
- *  @param {message} message - A message object as defined in discord.js
- *  @param {string[]} cmds - Strings containing parameters
+ * Checks if the requester has the ADMIN permission in this guild and if they
+ * do, deletes the quote at the specified index of the json file. The requester
+ * is only allowed to delete quotes from this guild.
+ *
+ * @param {message} message - The original message object prompting this call
+ * @param {string[]} cmds - Strings containing parameters
  */
 function deleteQuote(message, cmds) {
   if (checkPermission(message, 'ADMINISTRATOR')) {
@@ -289,9 +337,12 @@ function deleteQuote(message, cmds) {
 }
 
 /**
- *  @param {message} message - A message object as defined in discord.js
- *  @param {string[]} cmds - Strings containing lowercased parameters
- *  @param {string[]} capitalCmds - Strings containing parameters
+ * Upon recieving a call to this function, it attempts to direct to the
+ * corresponding methods.
+ *
+ * @param {message} message - The original message object prompting this call
+ * @param {string[]} cmds - Strings containing lowercased parameters
+ * @param {string[]} capitalCmds - Strings containing parameters
  */
 function quote(message, cmds, capitalCmds) {
   switch (cmds[1]) {

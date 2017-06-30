@@ -1,3 +1,8 @@
+/**
+ * This file is the entry point of Fubuki, the "main" in other words.
+ * Fubuki reacts to emitted events by calling the functions defined
+ * in the other files.
+ */
 const DISCORD = require('discord.js');
 const FUBUKI = new DISCORD.Client();
 

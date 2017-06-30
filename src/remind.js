@@ -1,5 +1,18 @@
 /**
- * @param {message} message
+ * This file handles reminders which are messages that the user desires to be
+ * played back to them at a specified time via @mention.
+ */
+
+/**
+ * Checks for the message to be in the proper format via regular expressions.
+ * If it is in the proper format, this process sleeps until the specified time.
+ * Then at that time, it sends a message containing the original message
+ * contents and @mentions that person. As this function runs asynchronously,
+ * there are no issues with the process sleeping. The reminders are stored in
+ * temporary memory and will be lost upon restarting Fubuki. This is due to the
+ * time sensitive nature of reminders - usually being short durations.
+ *
+ * @param {message} message - The original message object prompting this call
  */
 function remindMe(message) {
   let remindRegex = new RegExp([
