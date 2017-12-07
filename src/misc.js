@@ -6,6 +6,18 @@
 
 let config = require('../config');
 let request = require('request-promise');
+const Promise = require('bluebird');
+
+let aniListToken;
+
+Promise.series = (promiseArr) => {
+  return Promise.reduce(promiseArr, (values, promise) => {
+    return promise().then((result) => {
+      values.push(result);
+      return values;
+    });
+  }, []);
+};
 
 /**
  *  @param {message} message - A message object as defined in discord.js
@@ -218,6 +230,218 @@ function deleteBooru(message) {
 }
 
 /**
+ * @param {message} message - A message object as defined by discord.js
+ */
+function choose(message) {
+  // Weighted Choosing (#1#)
+  // Defaults to 1 per choice
+  let result ='';
+  let probability = [];
+  let totalWeight = 0;
+
+  let choices = message.content.split('!choose ')[1].split('|');
+
+  for (let element of choices) {
+    let value = /[^#]+(?!#\d+#)/i.exec(element)[0].trim();
+
+    let frequency = 1;
+    if (/#\d+#/i.test(element)) {
+      frequency = parseInt(/#\d+#/i.exec(element)[0].replace(/#/g, ''));
+    }
+
+    probability.push([value, totalWeight + frequency]);
+    totalWeight += frequency;
+  }
+
+  let index = Math.floor(Math.random() * totalWeight);
+  for (let element of probability) {
+    if (element[1] > index) {
+      result = element[0];
+      break;
+    }
+  }
+
+	message.channel.send(result)
+		.catch( (reason) => {
+			console.log('Rejected Misc Choose Promise for ' + reason);
+		});
+}
+
+/**
+ *	@param {message} message - A message object as defined by discord.js
+ */
+function roll(message) {
+  let rollInfo = message.content.replace('!roll ', '');
+
+	let diceRegex = /(\d+D\d+(\s*\+\s)*)+\d*(\s*\+\s*\d*)*/i;
+	if (!diceRegex.test(rollInfo) || /[^\d\s\+\-d]/i.test(rollInfo)) {
+			message.channel.send(
+				'That was the wrong format, please use this format: ' +
+				'2D8 + 1D10 - 3D1 + 5 + -7 : where all the dice rolled are on the ' +
+				'left side and all the constants on the right side. ' +
+				'Case does not matter.'
+			)
+			.catch( (reason) => {
+				console.log('Rejected Misc Roll Promise for ' + reason);
+      });
+      return;
+  }
+
+  let rollSum = 0;
+  let constantSum = 0;
+
+  let dice = /(\d+D\d+\s*[\+\-]*\s*)+/i.exec(rollInfo)[0];
+  dice = dice.replace('-', '+-').split('+');
+
+  for (let element of dice) {
+    if (element.trim().length < 1) {
+      continue;
+    }
+
+    [num, sides] = element.replace(' ', '').split(/d/i);
+
+    let sign = 1;
+    if (/\-/.test(num)) {
+      sign = -1;
+    }
+    num = num.replace('-', '');
+
+    for (let i = 0; i < num; i++) {
+      rollSum += sign * (Math.floor(Math.random() * (sides - 1)) + 1);
+    }
+  }
+
+  let constantRegex = /([\+\-]\s*\-?\s*\d+\s*)+(?!d)/i;
+  let constant = constantRegex.exec(rollInfo)[0].split(/\+/);
+  for (let element of constant) {
+    if (element.trim().length < 1) {
+      continue;
+    }
+    let val = element.replace(' ', '');
+    val = /[\+\-]?\s*\d/.exec(val)[0];
+
+    constantSum += parseInt(val, 10);
+  }
+  let result = (rollSum + constantSum).toString();
+
+  message.channel.send('You rolled a ' + result)
+    .catch( (reason) => {
+      console.log('Failed Misc Roll Result Promise for ' + reason);
+    });
+}
+
+function aniListQuery() {
+  // TODO: Check if Fubuki already has a valid access_token
+
+  let authUri = config.anilist_path + 'auth/access_token?' +
+                config.anilist_grant + '&' + config.anilist_id +
+                '&' + config.anilist_secret;
+
+  let authOptions = {
+    method: 'POST',
+    uri: authUri,
+    json: true,
+  };
+
+  request(authOptions)
+    .then( (body) => {
+      aniListToken = body.access_token;
+    })
+    .catch( (reason) => {
+      console.log('Rejected Misc AniListQuery Promise for ' + reason);
+    });
+}
+
+/**
+ * @param {message} message A message object as defined in discord.js
+ */
+function aniListAiring(message) {
+  let airingOptions = {
+    method: 'GET',
+    uri: config.anilist_path + 'browse/anime?access_token=' +
+         aniListToken +
+         '&status=Currently Airing&airing_data=true&full_page=true',
+    json: true,
+  };
+
+  request(airingOptions)
+    .then( (body) => {
+      let resultString = '';
+      let resultArray = body;
+
+      for (let element of resultArray) {
+        resultString += element.title_english + '(' +
+                        element.title_japanse + '),';
+      }
+
+      message.channel.send(resultString.substring(0, resultString.length-1))
+        .catch( (reason) => {
+          console.log('Rejected Misc A.L.A. Send Promise for ' +- reason);
+        });
+    })
+    .catch( (reason) => {
+      console.log('Rejected Misc AniListAiring Promise for ' + reason);
+    });
+}
+
+/**
+ * @param {message} message A message object as defined in discord.js
+ */
+function season(message) {
+  return Promise.series([
+    () => aniListQuery(),
+    () => aniListAiring(message)
+  ]);
+}
+
+/**
+ * @param {message} message A message object as defined in discord.js
+ * @param {string} title A string containing the title of the show
+ */
+function aniListSpecific(message, title) {
+  let queryUri = config.anilist_path + 'anime/search/' + title +
+                 '?' + aniListToken;
+
+  let queryOptions = {
+    method: 'GET',
+    uri: queryUri,
+    json: true,
+  };
+
+  request(queryOptions)
+    .then( (body) => {
+      let text = '';
+      let showInfo = body;
+
+      text += showInfo.title_english;
+      if (showInfo.title_english != showInfo.title_japanse) {
+        text += ' (' + showInfo.title_japanse + ')';
+      }
+      text += '\nStatus: ' + showInfo.airing_status;
+      text += '\nDescription: ' + showInfo.description;
+
+      message.channel.send(text)
+        .catch( (reason) => {
+          console.log('Rejected Misc A.L.S. Send Promise for ' + reason);
+        });
+    })
+    .catch( (reason) => {
+      console.log('Rejected Misc AniListSpecific Promise for ' + reason);
+    });
+}
+
+/**
+ * @param {message} message A message object as defined in discord.js
+ */
+function aninfo(message) {
+  let title = message.content.replace('!aninfo ', '');
+  return Promise.series([
+    () => aniListQuery(),
+    () => aniListSpecific(message, title)
+  ]);
+}
+
+/**
  * @param {string} orig - The original string
  * @param {int} targetLength - The string's  minimum length once padded
  * @return {string} - The original string with the padding added
@@ -232,5 +456,6 @@ function deleteBooru(message) {
  }
 
  module.exports = {
-   urbanDefine, getAvatar, coinFlip, rate, getOptions, deleteBooru, padRight,
+   urbanDefine, getAvatar, coinFlip, rate, getOptions, deleteBooru,
+   choose, roll, season, aninfo, padRight,
  };

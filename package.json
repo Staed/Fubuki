@@ -7,11 +7,11 @@
     "bot",
     "node"
   ],
-  "bugs": "https://github.com/Staed/Fubuki/issues",
-  "license": "MIT",
-  "author": {
-    "name": "Staed"
+  "bugs": {
+    "url": "https://github.com/Staed/Fubuki/issues"
   },
+  "license": "MIT",
+  "author": "Staed",
   "main": "./src/index.js",
   "scripts": {
     "start": "node ./src/index.js",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Staed/Fubuki.git"
+    "url": "git+https://github.com/Staed/Fubuki.git"
   },
   "dependencies": {
     "cheerio": "*",
@@ -30,16 +30,13 @@
     "request": "2.x",
     "request-promise": "4.x",
     "yahoo-finance": ">=0.3.2",
-    "ytdl-core": "^0.14.4"
-  },
-  "devDependencies": {
-    "@types/node": "^8.0.4",
-    "eslint": "^4.1.1",
-    "eslint-config-google": "^0.8.0",
+    "ytdl-core": "^0.14.4",
     "generator-eslint": "^1.2.0",
-    "yo": "^2.0.0"
+    "yo": "^2.0.0",
+    "bluebird": "3.x"
   },
   "engines": {
     "node": "^8.1.2"
-  }
+  },
+  "homepage": "https://github.com/Staed/Fubuki#readme"
 }

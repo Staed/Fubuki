@@ -18,10 +18,20 @@ FUBUKI.on('message', (message) => {
   if (message.guild != undefined) {
     let cmds = message.content.toLowerCase().split(' ');
 
-    switch (cmds[0]) {
+	  features(message, cmds);
+  }
+});
+
+/**
+ * @param {*} message A message object as defined in discord.js
+ * @param {*} commands The string containing a request to Fubuki
+ */
+async function features(message, commands) {
+  try{
+	  switch (commands[0]) {
       case '!ping':
         message.channel.send('pong')
-          .then(console.log(cmds))
+          .then(console.log(commands))
           .catch( (reason) => {
             console.log('Rejected Pong Promise for ' + reason);
           });
@@ -34,7 +44,7 @@ FUBUKI.on('message', (message) => {
           });
         message.delete()
           .catch( (reason) => {
-            console.log('Rejected Sleepe Delete Promise for ' + reason);
+            console.log('Rejected Sleep Delete Promise for ' + reason);
           });
         setTimeout( () => {
           FUBUKI.destroy();
@@ -42,21 +52,21 @@ FUBUKI.on('message', (message) => {
         }, 500);
         break;
       case '!booru':
-        booru.getDanbooru(message, cmds);
+        booru.getDanbooru(message, commands);
         message.delete()
           .catch( (reason) => {
             console.log('Rejected Booru Delete Promise for ' + reason);
           });
         break;
       case '!b':
-        booru.getDanbooru(message, cmds);
+        booru.getDanbooru(message, commands);
         message.delete()
           .catch( (reason) => {
             console.log('Rejected Booru Delete Promise for ' + reason);
           });
         break;
       case '!bsafe':
-        let newCmd = cmds;
+        let newCmd = commands;
         newCmd.push('rating:safe');
         booru.getDanbooru(message, newCmd);
         message.delete()
@@ -108,23 +118,23 @@ FUBUKI.on('message', (message) => {
         musicPlayer.stopRadio(message.guild);
         break;
       case '!urban':
-        misc.urbanDefine(message, cmds);
+        misc.urbanDefine(message, commands);
         break;
       case '!avatar':
-        misc.getAvatar(message, cmds);
+        misc.getAvatar(message, commands);
         break;
       case '!a':
-        misc.getAvatar(message, cmds);
+        misc.getAvatar(message, commands);
         break;
       case '!coinflip':
         misc.coinFlip(message);
         break;
       case '!rate':
-        misc.rate(message, cmds);
+        misc.rate(message, commands);
         break;
       case '!quote':
-        if (cmds[1] !== 'fubuki' && cmds[2] !== 'fubuki') {
-          quote.quote(message, cmds, message.content.split(' '));
+        if (commands[1] !== 'fubuki' && commands[2] !== 'fubuki') {
+          quote.quote(message, commands, message.content.split(' '));
         } else {
           message.channel.send('I can\'t quote from myself dummy!')
             .then( () => {
@@ -136,7 +146,7 @@ FUBUKI.on('message', (message) => {
         }
         break;
       case '!stock':
-        if (cmds[1] == undefined || cmds[2] == undefined) {
+        if (commands[1] == undefined || commands[2] == undefined) {
           let badText = 'You need to specify which market API ' +
               ' (bloomberg/google/yahoo) and company ticker name';
           message.channel.send(badText)
@@ -144,7 +154,7 @@ FUBUKI.on('message', (message) => {
               console.log('Rejected Stock BadParams Promise for ' + reason);
             });
         } else {
-          finance.getStock(message, cmds[1], cmds[2].toUpperCase());
+          finance.getStock(message, commands[1], commands[2].toUpperCase());
         }
         break;
       case '!delete':
@@ -160,14 +170,32 @@ FUBUKI.on('message', (message) => {
             console.log('Rejected Help DM Promise for ' + reason);
           });
         break;
+      case '!choose':
+        misc.choose(message);
+        break;
+      case '!roll':
+        misc.roll(message);
+        break;
+      case '!season':
+        misc.season(message);
+        break;
+      case '!aninfo':
+        misc.aninfo(message);
+        break;
       default:
     }
   }
-});
+  catch (err) {
+    console.log('Command Processing Failed because ', err);
+  }
+};
 
 FUBUKI.on('disconnected', () => {
   console.log('Disconnected');
   process.exit(1);
 });
 
-FUBUKI.login(config.discord_token);
+FUBUKI.login(config.discord_token)
+  .catch( (reason) => {
+    console.log('Failed to login because ' + reason);
+  });
