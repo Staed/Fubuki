@@ -23,24 +23,26 @@
     "url": "git+https://github.com/Staed/Fubuki.git"
   },
   "dependencies": {
+    "bluebird": "3.x",
     "cheerio": "*",
     "discord.js": "11.x",
+    "generator-eslint": "^1.2.0",
     "jsonfile": "3.x",
     "opusscript": "*",
     "request": "2.x",
     "request-promise": "4.x",
     "yahoo-finance": ">=0.3.2",
-    "ytdl-core": "^0.14.4",
-    "generator-eslint": "^1.2.0",
+    "yeoman-doctor": "^2.1.0",
     "yo": "^2.0.0",
-    "bluebird": "3.x"
+    "ytdl-core": "^0.14.4"
   },
   "devDependencies": {
     "eslint": "^4.13.1",
     "eslint-config-google": "^0.9.1"
   },
   "engines": {
-    "node": "^8.1.2"
+    "node": "^8.9.2",
+    "npm": "^5.5.1"
   },
   "homepage": "https://github.com/Staed/Fubuki#readme"
 }
