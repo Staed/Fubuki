@@ -1,7 +1,10 @@
-let config = require('../config');
+let config = require('../config.js');
+let log = require('./logger.js');
 let request = require('request-promise');
-let misc = require('./misc');
+let misc = require('./misc.js');
 let prevImgId = null;
+
+let curFile = 'booru.js';
 
 /**
  * @param {string[]} cmds
@@ -21,6 +24,8 @@ function cleanGet(cmds) {
  * @param {string} imgUrl - The complete URL to the desired image link
  */
 function sendGoogleShortenerRequest(message, text, imgUrl) {
+  let func = 'sendGoogleShortenerRequest';
+
   let options = {
     method: 'POST',
     uri: config.google_url_shortener_url + '?key=' + config.google_api_key,
@@ -36,23 +41,24 @@ function sendGoogleShortenerRequest(message, text, imgUrl) {
   request(options)
     .then( (body) => {
       if (body.id != null) {
-        console.log('Shortened url to ' + body.id);
+        log.verbose('shorten', curFile, func, 'Shortened url to ' + body.id);
         message.channel.send(text + body.id)
           .catch( (reason) => {
-            console.log('Rejected Google Short URL for ' + reason);
+            log.info(reason, curFile, func, 'Reject Google short URL');
           });
       } else {
         message.channel.send(text + imgUrl)
           .catch( (reason) => {
-            console.log('Rejected Google Full URL Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject Google full URL');
           });
       }
     })
     .catch( (err) => {
-      console.log('Unable to shorten url, returning long form');
+      log.warn(err, curFile, func,
+               'Unable to shorten url, returning long form');
       message.channel.send(text + imgUrl)
         .catch( (reason) => {
-          console.log('Rejected Google Initial Promise for ' + reason);
+          log.info(reason, curFile, func, 'Reject Google initial');
       });
     });
 }
@@ -62,6 +68,8 @@ function sendGoogleShortenerRequest(message, text, imgUrl) {
  * @param {string[]} cmds
  */
 function getDanbooru(message, cmds) {
+  let func = 'getDanbooru';
+
   let tagList = cleanGet(cmds);
   if (prevImgId != null) {
       tagList += '+-id:' + prevImgId;
@@ -81,10 +89,12 @@ function getDanbooru(message, cmds) {
       } else {
         message.channel.send('No picture found')
           .catch( (reason) => {
-            console.log('Rejected Booru Null Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject no picture');
           });
-        return console.error('Bad File Get at Index ' +
-         selectedIdx + ' on data:\n' + JSON.stringify(body));
+        log.warn('NullPointer', curFile, func,
+                 'Recieved a null pointer instead of array at index ' +
+                selectedIdx + 'on ' + JSON.stringify(body));
+        return;
       }
 
       if (config.use_shortener === true) {
@@ -93,7 +103,7 @@ function getDanbooru(message, cmds) {
       } else {
         message.channel.send(decodeURIComponent(tagStr) + '\n' + imgUrl)
           .catch( (reason) => {
-            console.log('Rejected Booru URL Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject booru URL');
           });
       }
   })
@@ -101,7 +111,7 @@ function getDanbooru(message, cmds) {
     return console.error('Request Failed: ' + err);
     message.channel.send('Request Failed. Try again.')
       .catch( (reason) => {
-        console.log('Rejected Booru Reject Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject request fail');
       });
   });
 }
@@ -112,11 +122,13 @@ function getDanbooru(message, cmds) {
  */
 function getSafebooru(message, cmds) {
   /*
+  let func = 'getSafebooru';
+
   let tagList = cleanGet(cmds);
   let options = misc.getOptions(config.sbooru_url, config.sbooru_get, tagList);
   message.channel.send('fixme')
     .catch( (reason) => {
-      console.log('Rejected SafeBooru Msg Promise for ' + reason);
+      log.info(reason, curFile, func, 'Reject SafeBooru message');
     });
   */
 }

@@ -2,6 +2,7 @@ const DISCORD = require('discord.js');
 const FUBUKI = new DISCORD.Client();
 
 let config = require('../config');
+let log = require('./logger.js');
 let booru = require('./booru.js');
 let remind = require('./remind.js');
 let musicPlayer = require('./musicplayer.js');
@@ -9,9 +10,12 @@ let misc = require('./misc.js');
 let quote = require('./quote.js');
 let finance = require('./finance.js');
 
+let curFile = 'index.js';
+
 FUBUKI.on('ready', () => {
+  log.info(curFile, 'on ready', 'File found');
   config.id = FUBUKI.user.id;
-  console.log('Ready as ' + config.id);
+  log.verbose('ready', curFile, 'on ready', 'Ready as ' + config.id);
 });
 
 FUBUKI.on('message', (message) => {
@@ -27,24 +31,30 @@ FUBUKI.on('message', (message) => {
  * @param {*} commands The string containing a request to Fubuki
  */
 async function features(message, commands) {
+  let func = 'features';
+
   try {
     switch (commands[0]) {
       case '!ping':
         message.channel.send('pong')
-          .then(console.log(commands))
+          .then(
+            log.verbose('ping', curFile, func, commands)
+          )
           .catch( (reason) => {
-            console.log('Rejected Pong Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject pong');
           });
         break;
       case '!sleep':
         message.channel.send('Logging off. Bye!')
-          .then(console.log('Logging off.'))
+          .then( () => {
+            log.verbose('sleep', curFile, func, 'Logging off');
+          })
           .catch( (reason) => {
-            console.log('Rejected Sleep Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject sleep');
           });
         message.delete()
           .catch( (reason) => {
-            console.log('Rejected Sleep Delete Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject delete sleep');
           });
         setTimeout( () => {
           FUBUKI.destroy();
@@ -55,14 +65,14 @@ async function features(message, commands) {
         booru.getDanbooru(message, commands);
         message.delete()
           .catch( (reason) => {
-            console.log('Rejected Booru Delete Promise for ' + reason);
+            log.info(reason, curFile, func, 'Rejected booru');
           });
         break;
       case '!b':
         booru.getDanbooru(message, commands);
         message.delete()
           .catch( (reason) => {
-            console.log('Rejected Booru Delete Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject booru alias');
           });
         break;
       case '!bsafe':
@@ -71,7 +81,7 @@ async function features(message, commands) {
         booru.getDanbooru(message, newCmd);
         message.delete()
           .catch( (reason) => {
-            console.log('Rejected Booru Delete Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject booru option safe');
           });
         break;
       case '!remindme':
@@ -81,10 +91,11 @@ async function features(message, commands) {
         musicPlayer.play(message);
         message.delete()
           .then( (msg) => {
-            console.log('Deleted message from ' + msg.author);
+            log.verbose('delete', curFile, func,
+                        'Deleted message from ' + msg.author);
           })
           .catch( (reason) => {
-            console.log('Rejected Music Delete Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject music');
           });
         break;
       case '!connect':
@@ -107,10 +118,11 @@ async function features(message, commands) {
         if (/youtube.com/.test(message.content)) {
           message.delete()
             .then( (msg) => {
-              console.log('Deleted message from ' + msg.author);
+              log.verbose('delete', curFile, func,
+                          'Deleted message from ' + msg.author);
             })
             .catch( (reason) => {
-              console.log('Rejected Radio Delete Promise for ' + reason);
+              log.info(reason, curFile, func, 'Reject radio');
             });
         }
         break;
@@ -138,10 +150,11 @@ async function features(message, commands) {
         } else {
           message.channel.send('I can\'t quote from myself dummy!')
             .then( () => {
-              console.log('Refused to quote self');
+              log.verbose('misuse', curFile, func,
+                          'Refused to quote self');
             })
             .catch( (reason) => {
-              console.log('Rejected Quote Fubuki Promise for ' + reason);
+              log.info(reason, curFile, func, 'Reject quote fubuki');
             });
         }
         break;
@@ -151,7 +164,7 @@ async function features(message, commands) {
               ' (bloomberg/google/yahoo) and company ticker name';
           message.channel.send(badText)
             .catch( (reason) => {
-              console.log('Rejected Stock BadParams Promise for ' + reason);
+              log.info(reason, curFile, func, 'Reject stock');
             });
         } else {
           finance.getStock(message, commands[1], commands[2].toUpperCase());
@@ -175,31 +188,31 @@ async function features(message, commands) {
       case '!help':
         message.channel.send('Help is on the way! Check your DMs.')
           .catch( (reason) => {
-            console.log('Rejected Help Public Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject help');
           });
 
         message.author.send(config.help_text1)
           .catch( (reason) => {
-            console.log('Rejected Help1 DM Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject help DM part 1');
           });
         message.author.send(config.help_text2)
           .catch( (reason) => {
-            console.log('Rejected Help2 DM Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject help DM part 2');
           });
         break;
       default:
     }
   } catch (err) {
-    console.log('Command Processing Failed because ', err);
+    log.warn(err, curFile, func, 'Command processing failed');
   }
 };
 
 FUBUKI.on('disconnected', () => {
-  console.log('Disconnected');
+  info.verbose('disconnect', curFile, 'on disconnected', 'Disconnected');
   process.exit(1);
 });
 
 FUBUKI.login(config.discord_token)
   .catch( (reason) => {
-    console.log('Failed to login because ' + reason);
+    log.error(reason, curFile, 'login', 'Failed to login');
   });

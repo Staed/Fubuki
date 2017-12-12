@@ -1,7 +1,13 @@
+let log = require('./logger.js');
+
+let curFile = 'remind.js';
+
 /**
  * @param {message} message
  */
 function remindMe(message) {
+  let func = 'remindMe';
+
   let remindRegex = new RegExp([
     '.+?in[\\s]+(\\d+\[\\s]+(hour(s)?|minute(s)?))?',
     '( and[\\s]+(\\d+[\\s](hour(s)?|minute(s)?)))?',
@@ -15,20 +21,21 @@ function remindMe(message) {
       ' everything after it if desired. Case does not matter.'
     )
       .catch( (reason) => {
-        console.log('Rejected Remind WrongFormat Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject wrong format');
       });
     return;
   }
   let matchedStrings =
       message.content.match(/\d+[\s]+((hour(s)?)|(minute(s)?))/ig);
-  console.log('Reminder to ' + message.author.username
-    + ' in ' + matchedStrings.join(' '));
+  log.verbose('set', curFile, func, 'Set reminder to ' +
+              message.author.username + ' in ' + matchedStrings.join(' '));
 
   let remindTimer = 0;
   for (let elem of matchedStrings) {
     let timeArr = elem.split(' ');
     if (timeArr.length < 2) {
-      console.log('Bad Time match in timeArr from !remindme');
+      log.verbose('bad match', curFile, func,
+                  'Bad Time match in timeArr from !remindme');
       return;
     }
 
@@ -51,9 +58,12 @@ function remindMe(message) {
   setTimeout( () => {
     message.reply('reminding you: ' + remindText)
       .then( (msg) => {
-        console.log('Sent a reminder to ' + msg.author.username);
+        log.verbose('send', curFile, func, 'Sent a reminder to ' +
+                    msg.author.username);
       })
-      .catch(console.error);
+      .catch( (reason) => {
+        log.info(reason, curFile, func, 'Reject remind message');
+      });
   }, remindTimer*1000);
 }
 

@@ -4,8 +4,11 @@
  * since they do not require their own specific file for readability
  */
 
-let config = require('../config');
+let config = require('../config.js');
+let log = require('./logger.js');
 let request = require('request-promise');
+
+let curFile = 'misc.js';
 
 let aniListToken;
 /**
@@ -13,6 +16,8 @@ let aniListToken;
  *  @param {string[]} cmds
  */
  function urbanDefine(message, cmds) {
+   let func = 'urbanDefine';
+
    let term = cmds.slice(1).join('+');
 
    let options = {
@@ -23,25 +28,24 @@ let aniListToken;
    request(options)
       .then( (body) => {
         if (body.result_type == 'no_results') {
-          console.log('No results for ' + term);
           message.channel.send('There are no results for: ' +
                                term.replace('+', ' '))
             .catch( (reason) => {
-              console.log('Rejected Urban Null Promise for ' + reason);
+              log.info(reason, curFile, func, 'No result message');
             });
         } else {
           let firstDef = body.list[0];
           message.channel.send('**' + cmds.slice(1).join(' ') + ':**\n' +
                                firstDef.definition + '\n' + firstDef.example)
             .catch( (reason) => {
-              console.log('Rejected Urban Definition Promise for ' + reason);
+              log.info(reason, curFile, func, 'Definition message');
             });
         }
       }).catch( (err) => {
-        console.log('Error accessing Urban Dictionary\'s API:\n' + err);
+        log.warn(err, curFile, func, 'Access API Error');
         message.channel.send('Error accessing Urban Dictionary')
           .catch( (reason) => {
-            console.log('Rejected Urban Reject Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject message');
           });
       });
  }
@@ -51,18 +55,20 @@ let aniListToken;
  * @param {string[]} cmds - String[] containing "!a" and a user id or username
  */
  function getAvatar(message, cmds) {
+   let func = 'getAvatar';
+
    if (cmds[1] == undefined) {
-     console.log('No username for avatar specified');
+     log.verbose('undefined', curFile, func, 'Getting username');
      message.channel.send('You need to specify who\'s avatar I am looking for!')
       .catch( (reason) => {
-        console.log('Rejected Avatar Reject Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject username message');
       });
      return;
    }
 
    let user = cmds.slice(1).join(' ');
 
-   console.log('Looking for: ' + user);
+   log.verbose('', curFile, func, 'Looking for: ' + user);
    let memberName = user.toLowerCase();
    let avatarUrl = '';
 
@@ -70,7 +76,8 @@ let aniListToken;
      let obj = message.guild.members.get(memberName.replace(/\D/g, ''));
      if (typeof obj !== 'undefined') {
       avatarUrl = obj.user.displayAvatarURL;
-      console.log('Found ' + obj.displayName + '\'s avatar at ' + avatarUrl);
+      log.verbose('', curFile, func, 'Found ' + obj.displayName +
+                  '\'s avatar at ' + avatarUrl);
      }
    } else {
      for (let [, memberObj] of message.guild.members) {
@@ -79,7 +86,7 @@ let aniListToken;
 
        if (displayName == memberName || username == memberName) {
         avatarUrl = memberObj.user.displayAvatarURL;
-        console.log('Found ' + memberObj.displayName +
+        log.verbose('', curFile, func, 'Found ' + memberObj.displayName +
                     '\'s avatar at ' + avatarUrl);
         break;
        }
@@ -90,13 +97,13 @@ let aniListToken;
      avatarUrl = avatarUrl.replace('jpg', 'png');
      message.channel.send(avatarUrl)
       .catch( (reason) => {
-        console.log('Rejected Avatar Result for ' + reason);
+        log.info(reason, curFile, func, 'Reject avatar message');
       });
    } else {
-     console.log('Could not find member ' + user);
+     log.verbose('undefined', curFile, func, 'Could not find member ' + user);
      message.channel.send('I couldn\'t find that member!')
       .catch( (reason) => {
-        console.log('Rejected Avatar Null Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject avatar null');
       });
    }
  }
@@ -105,6 +112,8 @@ let aniListToken;
 * @param {message} message - A message object as defined in discord.js
 */
  function coinFlip(message) {
+   let func = 'coinFlip';
+
    let coin;
    let flip = Math.floor(Math.random() * 100 + 1);
 
@@ -115,17 +124,17 @@ let aniListToken;
    } else {
      message.channel.send('Uhm... the coin landed on its side, flipping again.')
       .catch( (reason) => {
-        console.log('Rejected Coin Flip Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject side message');
       });
     message.channel.send('!coinflip')
       .catch( (reason) => {
-        console.log('Rejected Coin Flip Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject flip again message');
       });
     return;
    }
    message.channel.send('You flipped **' + coin + '**')
     .catch( (reason) => {
-      console.log('Rejected Coin Flip Promise for ' + reason);
+      log.info(reason, curFile, func, 'Rejected flip message');
     });
  }
 
@@ -136,27 +145,29 @@ let aniListToken;
   * maybe tied to stocks or time
   */
  function rate(message, cmds) {
+   let func = 'rate';
+
    let str = message.content.split(' ').slice(1).join(' ');
    let rating = rateAlgorithm(str);
 
    if (str.toLowerCase() == 'staed') {
      message.channel.send('Staeds are great! I\'ll give Staed a 10/10!')
       .catch( (reason) => {
-        console.log('Rejected Rate Staed Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject rate Staed message');
       });
-     console.log('Rated a Staed');
+     log.verbose('', curFile, func, 'Rated a Staed');
    } else if (str.toLowerCase() == 'sawai') {
      message.channel.send('Sawais are :put_litter_in_its_place: ' +
                           'I\'ll give Sawai a 0/10')
       .catch( (reason) => {
-        console.log('Rejected Rate Sawai Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject rate Sawai message');
       });
-     console.log('Rated a Sawai');
+     log.verbose('', curFile, func, 'Rated a Sawai');
    } else {
-     console.log('Rated ' + str + ' as ' + rating + '/10');
+     log.verbose('', curFile, func, 'Rated ' + str + ' as ' + rating + '/10');
      message.channel.send('I\'d rate ' + str + ' ' + rating + '/10')
       .catch( (reason) => {
-        console.log('Rejected Rate Response Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject rate message');
       });
    }
  }
@@ -176,13 +187,16 @@ let aniListToken;
   * @return {options} - The options used in sending a Request
   */
  function getOptions(hostname, path, tags) {
+   let func = 'getOptions';
+
    // Do NOT use qs: { ... }, it replaces '+' with '%20'
    let options = {
      method: 'GET',
      uri: hostname + path + tags,
      json: true,
    };
-   console.log('Recieved request for: ' + path + tags);
+   log.verbose('request', curFile, func,
+               'Recieved request for: ' + path + tags);
    return options;
  }
 
@@ -190,6 +204,8 @@ let aniListToken;
   * @param {message} message - A message object as defined in discord.js
   */
 function deleteBooru(message) {
+  let func = 'deleteBooru';
+
   message.channel.fetchMessages({limit: 100})
     .then( (msgs) => {
       for (let [, value] of msgs.entries()) {
@@ -197,24 +213,25 @@ function deleteBooru(message) {
             /\*\*Tags:\*\* .*\nhttps:.*/.test(value.content) == true) {
           value.delete()
             .catch( (reason) => {
-              console.log('Rejected Delete Message Promise for ' + reason);
+              log.info(reason, curFile, func, 'Reject delete');
             });
-          console.log('Deleted ' + value.content.replace('\n', '\t'));
+          log.verbose('', curFile, func, 'Deleted ' +
+                      value.content.replace('\n', '\t'));
           return;
         }
       }
 
       message.channel.send('No booru post to delete in the last 100 messages!')
         .catch( (reason) => {
-          console.log('Rejected Delete Exhaust Promise for ' + reason);
+          log.info(reason, curFile, func, 'Reject delete exhaust');
         });
     })
     .catch( (err) => {
       message.channel.send('Failed to fetch past messages')
         .catch( (reason) => {
-          console.log('Rejected Delete NotFound Promise for ' + reason);
+          log.info(reason, curFile, func, 'Reject delete not found');
         });
-      console.log('No messages found: ' + err);
+      log.warn('err', curFile, func, 'No messages found');
     });
 }
 
@@ -222,6 +239,8 @@ function deleteBooru(message) {
  * @param {message} message - A message object as defined by discord.js
  */
 function choose(message) {
+  let func = 'choose';
+
   // Weighted Choosing (#1#)
   // Defaults to 1 per choice
   let result ='';
@@ -252,7 +271,7 @@ function choose(message) {
 
   message.channel.send(result)
     .catch( (reason) => {
-      console.log('Rejected Misc Choose Promise for ' + reason);
+      log.info(reason, curFile, func, 'Reject choose');
     });
 }
 
@@ -260,6 +279,8 @@ function choose(message) {
  * @param {message} message - A message object as defined by discord.js
  */
 function roll(message) {
+  let func = 'roll';
+
   let rollInfo = message.content.replace('!roll ', '');
 
   let diceRegex = /(\d+D\d+(\s*\+\s)*)+\d*(\s*\+\s*\d*)*/i;
@@ -271,7 +292,7 @@ function roll(message) {
       'Case does not matter.'
     )
     .catch( (reason) => {
-      console.log('Rejected Misc Roll Promise for ' + reason);
+      log.info(reason, curFile, func, 'Reject roll');
     });
     return;
   }
@@ -322,7 +343,7 @@ function roll(message) {
 
   message.channel.send('You rolled a ' + result)
     .catch( (reason) => {
-      console.log('Failed Misc Roll Result Promise for ' + reason);
+      log.info(reason, curFile, func, 'Failed roll');
     });
 }
 
@@ -334,13 +355,16 @@ function roll(message) {
  * @param {string} title The title of the specific show wanted, or null.
  */
 function aniListQuery(queryType, message, title) {
+  let func = 'aniListQuery';
+
   if (aniListToken != null && aniListToken.expires > (Date.now()/1000 - 60)) {
     if ('airing' == queryType.toLowerCase()) {
       aniListAiring(message);
     } else if ('specific' == queryType.toLowerCase()) {
       aniListSpecific(message, title);
     } else {
-      Console.log('Invalid queryType in aniListQuery (misc.js)');
+      log.verbose('invalid', curFile, func,
+                  'Invalid queryType in aniListQuery with token');
       return;
     }
   }
@@ -365,11 +389,12 @@ function aniListQuery(queryType, message, title) {
       } else if ('specific' == queryType.toLowerCase()) {
         aniListSpecific(message, title);
       } else {
-        Console.log('Invalid queryType in aniListQuery (misc.js)');
+        log.verbose('invalid', curFile, func,
+                    'Invalid queryType in aniListQuery without token');
       }
     })
     .catch( (reason) => {
-      console.log('Rejected Misc AniListQuery Promise for ' + reason);
+      log.info(reason, curFile, func, 'Reject message');
     });
 }
 
@@ -377,6 +402,8 @@ function aniListQuery(queryType, message, title) {
  * @param {message} message A message object as defined in discord.js
  */
 function aniListAiring(message) {
+  let func = 'aniListAiring';
+
   let tdy = new Date();
   let mth = tdy.getMonth();
   let season = 'Winter';
@@ -413,17 +440,17 @@ function aniListAiring(message) {
         resultString.pop();
         message.channel.send('Search results truncated due to length...')
           .catch( (reason) => {
-            console.log('Truncated Currently Airing Message');
+            log.verbose('', curFile, func, 'Truncated season search results');
           });
       }
 
       message.channel.send(resultString)
         .catch( (reason) => {
-          console.log('Rejected Misc A.L.A. Send Promise for ' + reason);
+          log.info(reason, curFile, func, 'Reject message');
         });
     })
     .catch( (reason) => {
-      console.log('Rejected Misc AniListAiring Promise for ' + reason);
+      log.info(reason, curFile, func, 'Reject request message');
     });
 }
 
@@ -439,6 +466,8 @@ function season(message) {
  * @param {string} title A string containing the title of the show
  */
 function aniListSpecific(message, title) {
+  let func = 'aniListSpecific';
+
   let queryUri = config.anilist_path + 'anime/search/' + title +
                  '?access_token=' + aniListToken.access_token;
 
@@ -453,7 +482,7 @@ function aniListSpecific(message, title) {
       if (body == null || body == '') {
         message.channel.send('I couldn\'t find that anime.')
           .catch( (reason) => {
-            console.log('Rejected Misc A.L.S. Fail Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject message');
           });
         return;
       }
@@ -477,11 +506,11 @@ function aniListSpecific(message, title) {
 
       message.channel.send(text)
         .catch( (reason) => {
-          console.log('Rejected Misc A.L.S. Send Promise for ' + reason);
+          log.info(reason, curFile, func, 'Reject send message');
         });
     })
     .catch( (reason) => {
-      console.log('Rejected Misc AniListSpecific Promise for ' + reason);
+      log.info(reason, curFile, func, 'Reject request message');
     });
 }
 

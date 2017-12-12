@@ -1,6 +1,9 @@
 let jsonfile = require('jsonfile');
 
-let misc = require('./misc');
+let log = require('./logger.js');
+let misc = require('./misc.js');
+
+let curFile = 'quote.js';
 
 /**
  *  @param {Collection.<Snowflake, GuildMember>} members - A Map of (id, member)
@@ -45,11 +48,13 @@ function matchMention(members, index, capitalCmds) {
  *  @param {string[]} quotes - String arrays containing [username, text]
  */
 function selectRandomQuote(channel, quotes) {
+  let func = 'selectRandomQuote';
+
   if (!Object.keys(quotes).length) {
-    console.log('No quotes found');
+    log.verbose('empty', curFile, func, 'No quotes found');
     channel.send('No quotes found')
      .catch( (reason) => {
-       console.log('Rejected Quote NoQuote Promise for ' + reason);
+       log.info(reason, curFile, func, 'Reject no quote');
      });
     return;
   }
@@ -61,7 +66,7 @@ function selectRandomQuote(channel, quotes) {
     if (count >= rand) {
       channel.send('\"' + quote.content + '\" - ' + quote.name)
        .catch( (reason) => {
-         console.log('Rejected Quote Read Promise for ' + reason);
+         log.info(reason, curFile, func, 'reject quote read');
        });
       break;
     }
@@ -75,12 +80,14 @@ function selectRandomQuote(channel, quotes) {
  *  @param {message} message - The last message from that username
  */
 function addQuote(channel, name, message) {
+  let func = 'addQuote';
+
   if (message != null && message.guild != undefined) {
     let quoteList = [];
 
     jsonfile.readFile('src\\res\\quotes.json', (err, data) => {
       if (err) {
-        console.log('Could not read file');
+        log.warn(err, curFile, func, 'Could not read file');
         return;
       }
       quoteList = data;
@@ -94,23 +101,23 @@ function addQuote(channel, name, message) {
 
       jsonfile.writeFileSync('src\\res\\quotes.json', quoteList,
                              {spaces: 2}, (err) => {
-        console.log('Could not append quote to file');
+        log.warn(err, curFile, func, 'Could not append quote to file');
         return;
       });
     });
 
     channel.send('Added quote from ' + name)
       .catch( (reason) => {
-        console.log('Rejected Quote Added Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject quote added');
       });
-    console.log('Quote added: \"' + message.content + '\" from ' +
-                name + ' in ' + message.guild.name);
+    log.verbose('add', curFile, func, 'Quote added: \"' + message.content +
+                '\" from ' + name + ' in ' + message.guild.name);
   } else {
     channel.send('No quote from that user found in the last 100 messages')
       .catch( (reason) => {
-        console.log('Rejected Quote NoFound Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject quote not found');
       });
-    console.log('No Quote found');
+    log.verbose('not found', curFile, func, 'No Quote found');
   }
 }
 
@@ -119,6 +126,8 @@ function addQuote(channel, name, message) {
  *  @param {string[]} capitalCmds - Strings containing parameters
  */
 function addUserQuote(message, capitalCmds) {
+  let func = 'addUserQuote';
+
   let name = matchMention(message.guild.members, 2, capitalCmds);
   let lastMessage;
   message.channel.fetchMessages({limit: 100})
@@ -135,7 +144,7 @@ function addUserQuote(message, capitalCmds) {
      addQuote(message.channel, name[1], lastMessage);
    })
    .catch( (reason) => {
-     console.log('Rejected Quote Fetch Promise for ' + reason);
+     log.info(reason, curFile, func, 'Reject quote fetch');
    });
 }
 
@@ -144,9 +153,11 @@ function addUserQuote(message, capitalCmds) {
  *  @param {string[]} capitalCmds - Strings containing parameters
  */
 function searchQuote(message, capitalCmds) {
+  let func = 'searchQuote';
+
   jsonfile.readFile('src\\res\\quotes.json', (err, quoteList) => {
     if (err) {
-      console.log('Could not read file: ' + err);
+      log.warn(err, curFile, func, 'Could not read file');
       return;
     }
 
@@ -194,13 +205,15 @@ function checkPermission(message, permission) {
  *  @param {string[]} cmds - Strings containing parameters
  */
 function listQuotes(message, cmds) {
+  let func = 'listQuotes';
+
   if (checkPermission(message, 'ADMINISTRATOR')) {
     jsonfile.readFile('src\\res\\quotes.json', (err, quoteList) => {
       if (err) {
-        console.log('Failed to read Quote file: ' + err);
+        log.warn(err, curFile, func, 'Failed to read Quote file');
         message.channel.send('Failed to find a quote')
          .catch( (reason) => {
-           console.log('Rejected Quote ListRead Promise for ' + reason);
+           log.info(reason, curFile, func, 'Reject find quote fail');
          });
         return;
       }
@@ -216,13 +229,13 @@ function listQuotes(message, cmds) {
       }
       message.channel.send(list)
         .catch( (reason) => {
-          console.log('Rejected Quote ListPrint Promise for ' + reason);
+          log.info(reason, curFile, func, 'Reject send list');
         });
     });
   } else {
     message.channel.send('You don\'t have the permission to do this!')
       .catch( (reason) => {
-        console.log('Rejected Quote ListFail Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject permission denied');
       });
   }
 }
@@ -232,13 +245,15 @@ function listQuotes(message, cmds) {
  *  @param {string[]} cmds - Strings containing parameters
  */
 function deleteQuote(message, cmds) {
+  let func = 'deleteQuote';
+
   if (checkPermission(message, 'ADMINISTRATOR')) {
     jsonfile.readFile('src\\res\\quotes.json', (err, quoteList) => {
       if (err) {
-        console.log('Failed to read Quote file: ' + err);
+        log.warn(err, curFile, func, 'Failed to read Quote file');
         message.channel.send('Failed to find a quote')
          .catch( (reason) => {
-           console.log('Rejected Quote DeleteRead Promise for ' + reason);
+           log.info(reason, curFile, func, 'Reject find quote fail');
          });
         return;
       }
@@ -250,10 +265,11 @@ function deleteQuote(message, cmds) {
             message.channel.send('You can\'t delete quotes ' +
                                  'from outside this server')
               .catch( (reason) => {
-                console.log('Rejected Quote Delete NotSameGuild Promise for ' +
-                            reason);
+                log.info(reason, curFile, func,
+                         'Reject different guild');
               });
-            console.log('Blocked attempt to delete quote from another server');
+            log.verbose('invalid', curFile, func,
+                        'Blocked attempt to delete quote from another server');
             return;
           }
 
@@ -266,10 +282,10 @@ function deleteQuote(message, cmds) {
       jsonfile.writeFileSync('src\\res\\quotes.json', quoteList,
                              {spaces: 2}, (err) => {
         if (err) {
-          console.log('Failed to write Quote file: ' + err);
+          log.warn(err, curFile, func, 'Failed to write Quote file');
           message.channel.send('Failed to write to file')
             .catch( (reason) => {
-              console.log('Rejected Quote DeleteWrite Promise for ' + reason);
+              log.info(reason, curFile, func, 'Reject write fail');
             });
           return;
         }
@@ -277,13 +293,13 @@ function deleteQuote(message, cmds) {
 
       message.channel.send('Quote #' + cmds[2] + ' deleted')
         .catch( (reason) => {
-          console.log('Rejected Quote DelSuccess Promise for ' + reason);
+          log.info(reason, curFile, func, 'Reject delete success');
         });
     });
   } else {
     message.channel.send('You don\'t have the permission to do this!')
       .catch( (reason) => {
-        console.log('Rejected Quote DelFail Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject permission denied');
       });
   }
 }

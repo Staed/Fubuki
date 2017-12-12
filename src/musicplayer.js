@@ -1,5 +1,8 @@
-let config = require('../config');
+let config = require('../config.js');
+let log = require('./logger.js');
 const ytdl = require('ytdl-core');
+
+let curFile = 'musicplayer.js';
 
 let lastPlayed = '';
 let playlistQueue = [];
@@ -11,19 +14,21 @@ let ytHeader = /http(s?):\/\/(www.)?youtube.com\/watch\?v=/;
  * @return {Promise<VoiceConnection>}
  */
 function connect(guild) {
+  let func = 'connect';
+
   let voiceJoin = guild.channels.find( (val) =>
                                         val.name === config.default_channel);
   if (voiceJoin === null) {
     voiceJoin = guild.channels.find( (val) => val.type === 'voice');
 
     if (voiceJoin === null) {
-      console.log('ERR: Unable to find a voice channel.');
+      log.warn('null', curFile, func, 'Unable to find a voice channel.');
       return;
     }
   }
 
   if (voiceJoin.joinable === false) {
-    console.log('ERR: No permission to join the voice channel.');
+    log.warn('false', curFile, func, 'No permission to join');
     return;
   } else {
     return voiceJoin.join();
@@ -34,12 +39,14 @@ function connect(guild) {
  * @param {guild} guild - The guild that the command orignated from
  */
 function disconnect(guild) {
+  let func = 'disconnect';
+
   if (guild.voiceConnection === null) {
     return;
   }
   let voiceLeave = guild.voiceConnection.channel;
   voiceLeave.leave();
-  console.log('Left the voice in ' + guild.name);
+  log.verbose('', curFile, func, 'Left the voice in ' + guild.name);
   playlistQueue = [];
 }
 
@@ -47,32 +54,38 @@ function disconnect(guild) {
  * @param {message} message - A message object as defined in discord.js
  */
 function play(message) {
+  let func = 'play';
+
   let nextVid = message.content.split(' ')[1];
   if (nextVid == undefined) {
     message.channel.send('You need to specify a URL!')
       .catch( (reason) => {
-        console.log('Rejected Music PlayUndefined Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject play undefined message');
       });
-    console.log('Blank URL, command skipped');
+    log.verbose('blank', curFile, func, 'Blank URL, command skipped');
     return;
   }
 
   if (!/youtube.com/.test(nextVid)) {
     message.channel.send('You can only play from youtube videos right now!')
-      .catch( (err) => console.log(err));
+      .catch( (reason) => {
+        log.info(reason, curFile, func, 'Reject non-youtube');
+      });
     return;
   }
 
   playlistQueue.push(nextVid);
 
-  console.log('Added ' + nextVid.replace(ytHeader, '') + ' to the queue');
+  log.verbose('added', curFile, func, 'Added ' +
+              nextVid.replace(ytHeader, '') + ' to the queue');
   ytdl.getInfo(nextVid, (err, info) => {
-    if (err) console.log('No metainfo for the video found');
-    else {
+    if (err) {
+      log.warn(err, curFile, func, 'No metainfo for the video found');
+  } else {
       if (playlistQueue.length > 1) {
         message.channel.send('Added **' + info.title + '** to the queue.')
           .catch( (reason) => {
-            console.log('Rejected Play AddSuccess Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject add success message');
           });
       }
     }
@@ -88,6 +101,8 @@ function play(message) {
  * @param {message} message - A message object as defined in discord.js
  */
 function playQueued(nextVid, message) {
+  let func = 'playQueued';
+
   const STREAMOPTIONS = {seek: 0, volume: 1};
 
   if (nextVid != null) {
@@ -96,11 +111,13 @@ function playQueued(nextVid, message) {
     if (message.guild.voiceConnection === null) {
       connect(message.guild)
         .then( (connection) => {
-          console.log('Now Playing: ' + nextVid.replace(ytHeader, ''));
+          log.verbose('playing', curFile, func, 'Now Playing: ' +
+                      nextVid.replace(ytHeader, ''));
 
           ytdl.getInfo(nextVid, (err, info) => {
-            if (err) console.log('No metainfo for the video found');
-            else {
+            if (err) {
+              log.warn(err, curFile, func, 'No metainfo found new');
+            } else {
               let playbackInfo = ':play_pause: Playing **' + info.title +
                 '** [Length: ' + Math.floor(info.length_seconds/60) +
                 ':' + info.length_seconds%60 + ']\n(' +
@@ -108,8 +125,7 @@ function playQueued(nextVid, message) {
 
               message.channel.send(playbackInfo)
                 .catch( (reason) => {
-                  console.log('Rejected PlayQueued GetInfo Promise for ' +
-                              reason);
+                  log.info(reason, curFile, func, 'Reject get info');
                 });
             }
           });
@@ -123,20 +139,21 @@ function playQueued(nextVid, message) {
           });
 
           dispatcher.on('error', (err) => {
-            console.log(err);
+            log.warn(err, curFile, func, 'Dispatcher on failure new');
           });
         })
-        .catch( (err) => {
-          console.log('Couldnt connect to voice channel: ' + err);
+        .catch( (reason) => {
+          log.info(reason, curFile, func, 'Couldn\'t connect');
           message.channel.send('Could not connect to a voice channel')
             .catch( (reason) => {
-              console.log('Rejected PlayQueued Fail Promise for ' + reason);
+              log.info(reason, curFile, func, 'Reject fail message');
             });
         });
     } else {
       ytdl.getInfo(nextVid, (err, info) => {
-        if (err) console.log('No metainfo for the video found');
-        else {
+        if (err) {
+          log.verbose(err, curFile, func, 'No metainfo old');
+        } else {
           let playbackInfo = ':play_pause: Playing **' + info.title +
             '** [Length: ' + Math.floor(info.length_seconds/60) +
             ':' + info.length_seconds%60 + ']\n(' +
@@ -144,7 +161,7 @@ function playQueued(nextVid, message) {
 
           message.channel.send(playbackInfo)
             .catch( (reason) => {
-              console.log('Rejected PlayQueued Success Promise for ' + reason);
+              log.info(reason, curFile, func, 'Reject success');
             });
         }
       });
@@ -158,7 +175,7 @@ function playQueued(nextVid, message) {
       });
 
       dispatcher.on('error', (err) => {
-        console.log(err);
+        log.warn(err, curFile, func, 'Dispatcher on failure old');
       });
     }
   }
@@ -168,9 +185,12 @@ function playQueued(nextVid, message) {
  * @param {message} message - A message object as defined in discord.js
  */
 function playNext(message) {
+  let func = 'playNext';
+
   playlistQueue.shift();
   if (playlistQueue.length > 0) {
-    console.log('Now Playing: ' + playlistQueue[0].replace(ytHeader, ''));
+    log.verbose('playing', curFile, func, 'Now Playing: ' +
+                playlistQueue[0].replace(ytHeader, ''));
     playQueued(playlistQueue[0], message);
   }
 }
@@ -179,10 +199,13 @@ function playNext(message) {
  * @param {message} message
  */
 function skip(message) {
-  console.log(playlistQueue[0].replace(ytHeader, '') + ' skipped');
+  let func = 'skip';
+
+  log.verbose('skip', curFile, func, playlistQueue[0].replace(ytHeader, '') +
+              ' skipped');
   message.channel.send('Skipping song.')
     .catch( (reason) => {
-      console.log('Rejected Skip Success Promise for ' + reason);
+      log.info(reason, curFile, func, 'Reject success');
     });
   dispatcher.end();
 }
@@ -191,19 +214,23 @@ function skip(message) {
  * @param {message} message
  */
 function repeat(message) {
+  let func = 'repeat';
+
   message.content = '!play ' + lastPlayed;
   if (playlistQueue.length === 0) {
     play(message);
   } else {
     playlistQueue.push(lastPlayed);
 
-    console.log('Added ' + lastPlayed.replace(ytHeader, '') + ' to the queue');
+    log.verbose('add', curFile, func, 'Added ' +
+                lastPlayed.replace(ytHeader, '') + ' to the queue');
     ytdl.getInfo(lastPlayed, (err, info) => {
-      if (err) console.log('No metainfo for the video found');
-      else {
+      if (err) {
+        log.verbose(err, curFile, func, 'No metainfo found');
+      } else {
         message.channel.send('Added **' + info.title + '** to the queue.')
           .catch( (reason) => {
-            console.log('Rejected Repeat Success Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject success');
           });
       }
     });
@@ -214,20 +241,23 @@ function repeat(message) {
  * @param {channel} channel - The channel from which the message orignated
  */
 function nowPlaying(channel) {
+  let func = 'nowPlaying';
+
   if (playlistQueue.length === 0) {
     channel.send('Nothing is being played but my heart.')
       .catch( (reason) => {
-        console.log('Rejected NowPlaying Empty Promise for ' + reason);
+        log.info(reason, curFile, func, 'Reject empty message');
       });
   } else {
     ytdl.getInfo(playlistQueue[0], (err, info) => {
-      if (err) console.log('No metainfo for the video found');
-      else {
+      if (err) {
+        log.warn(err, curFile, func, 'No metainfo found');
+      } else {
         let playbackInfo = 'Now playing **' + info.title + '**\n(' +
           playlistQueue[0].replace(ytHeader, '') + ') ' + info.thumbnail_url;
         channel.send(playbackInfo)
           .catch( (reason) => {
-            console.log('Rejected NowPlaying Success Promise for ' + reason);
+            log.info(reason, curFile, func, 'Reject success');
           });
       }
     });
@@ -238,21 +268,28 @@ function nowPlaying(channel) {
  * @param {message} message
  */
 function radio(message) {
+  let func = 'radio';
+
   let url = message.content.split(' ')[1];
   let startLen = 0;
 
   if (!/youtube.com/.test(url)) {
     message.channel.send('Sorry, but I can only play ' +
                          'youtube live streams for now')
-      .catch( (err) => console.log(err));
+      .catch( (reason) => {
+        log.warn(reason, curFile, func, 'Reject non-youtube request');
+      });
   } else {
     message.channel.send('Attempting to play stream at: ' +
                          url.replace('https://www.', ''))
-      .catch( (err) => console.log(err));
+      .catch( (reason) => {
+        log.warn(reason, curFile, func, 'Reject play stream');
+      });
 
     ytdl.getInfo(url, (err, info) => {
-      if (err) console.log('No metainfo for the video found');
-      else {
+      if (err) {
+        log.warn(err, curFile, func, 'No metainfo found');
+      } else {
         for (format of info.formats) {
           if (format.max_dvr_duration_sec != undefined) {
             startLen = Math.max(0, format.max_dvr_duration_sec - 5);
@@ -269,15 +306,16 @@ function radio(message) {
           dispatcher = connection.playStream(stream);
 
           message.channel.send('Cleared the playlist to play the radio')
-            .catch( (err) => console.log(err));
+            .catch( (reason) => {
+              log.info(reason, curFile, func, 'Reject clear');
+            });
 
           let playbackInfo = ':play_pause: Playing radio at ** ' + info.title +
               + url.replace(ytHeader, '') + ' ' + info.thumbnail_url;
 
           message.channel.send(playbackInfo)
               .catch( (reason) => {
-                console.log('Rejected PlayQueued GetInfo Promise for ' +
-                            reason);
+                log.info(reason, curFile, func, 'Reject get info');
               });
 
           dispatcher.on('end', () => {
@@ -286,10 +324,12 @@ function radio(message) {
           });
 
           dispatcher.on('error', (err) => {
-            console.log(err);
+            log.warn(err, curFile, func, 'Dispatcher on failure');
           });
         })
-        .catch( (err) => console.log(err) );
+        .catch( (reason) => {
+          log.info(reason, curFile, func, 'Reject connect');
+        });
     });
   }
 }
