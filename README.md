@@ -28,9 +28,13 @@ Features
 |!rate          | Rolls a 1d10 to determine your rating. | <span style="color:#C39BD3">!rate Staed</span>|      |
 |!quote         | Fetches a random or specific user's quote from this server that was saved. | <span style="color:#C39BD3">!quote <br /> !quote Staed <br /> !quote @Staed#2910 </span>|      |
 |!quote add     | Saves the last message from the specified user as a quote. | <span style="color:#C39BD3">!quote add Staed</span>|       |
-|!quote list   | Lists all the quotes saved for this server.<br />Accessible only if you are an Administrator of the server. | <span style="color:#C39BD3">!quote list</span>|      |
-|!quote delete |  Deletes the specified quote. Only quotes from the current server are<br />accessible and only Administrators have the power to use this command. | <span style="color:#C39BD3">!quote delete 5</span>|        |
+|!quote list    | Lists all the quotes saved for this server.<br />Accessible only if you are an Administrator of the server. | <span style="color:#C39BD3">!quote list</span>|      |
+|!quote delete  |  Deletes the specified quote. Only quotes from the current server are<br />accessible and only Administrators have the power to use this command. | <span style="color:#C39BD3">!quote delete 5</span>|        |
 |!stock [*yahoo* &#124; *google* &#124; *bloomberg*]        | Fetches the latest stock  summary from the specified API for the company. | <span style="color:#C39BD3">!stock yahoo CL=F<br />!stock google ADC<br />!stock bloomberg GOOGL:US</span>|    &nbsp;  |
+|!roll          | Fubuki will roll dice for you. | <span style="color:#C39BD3">!roll 2D8 + 1D10 - 3D1 + 5 + -7</span>|  &nbsp;  |
+|!choose        | Fubuki will choose an option for you. You can give each option different weights. If a weight is not specified, it defaults to a weight of 1. | <span style="color:#C39BD3">!choose Clap #4# &#124; Don't Clap #2# &#124; Sleep</span> | &nbsp; |
+|!season        | Fubuki will pull up the names of the animes that are airing in the current season ordered by popularity. | &nbsp; | &nbsp; |
+|!aninfo        | Fubuki will pull up information on a specific anime. | <span style="color:#C39BD3">!aninfo Overlord 2</span> | &nbsp; |
 
 
 Installation

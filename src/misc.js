@@ -6,19 +6,8 @@
 
 let config = require('../config');
 let request = require('request-promise');
-const Promise = require('bluebird');
 
 let aniListToken;
-
-Promise.series = (promiseArr) => {
-  return Promise.reduce(promiseArr, (values, promise) => {
-    return promise().then((result) => {
-      values.push(result);
-      return values;
-    });
-  }, []);
-};
-
 /**
  *  @param {message} message - A message object as defined in discord.js
  *  @param {string[]} cmds
@@ -261,30 +250,30 @@ function choose(message) {
     }
   }
 
-	message.channel.send(result)
-		.catch( (reason) => {
-			console.log('Rejected Misc Choose Promise for ' + reason);
-		});
+  message.channel.send(result)
+    .catch( (reason) => {
+      console.log('Rejected Misc Choose Promise for ' + reason);
+    });
 }
 
 /**
- *	@param {message} message - A message object as defined by discord.js
+ * @param {message} message - A message object as defined by discord.js
  */
 function roll(message) {
   let rollInfo = message.content.replace('!roll ', '');
 
-	let diceRegex = /(\d+D\d+(\s*\+\s)*)+\d*(\s*\+\s*\d*)*/i;
-	if (!diceRegex.test(rollInfo) || /[^\d\s\+\-d]/i.test(rollInfo)) {
-			message.channel.send(
-				'That was the wrong format, please use this format: ' +
-				'2D8 + 1D10 - 3D1 + 5 + -7 : where all the dice rolled are on the ' +
-				'left side and all the constants on the right side. ' +
-				'Case does not matter.'
-			)
-			.catch( (reason) => {
-				console.log('Rejected Misc Roll Promise for ' + reason);
-      });
-      return;
+  let diceRegex = /(\d+D\d+(\s*\+\s)*)+\d*(\s*\+\s*\d*)*/i;
+  if (!diceRegex.test(rollInfo) || /[^\d\s\+\-d]/i.test(rollInfo)) {
+    message.channel.send(
+      'That was the wrong format, please use this format: ' +
+      '2D8 + 1D10 - 3D1 + 5 + -7 : where all the dice rolled are on the ' +
+      'left side and all the constants on the right side. ' +
+      'Case does not matter.'
+    )
+    .catch( (reason) => {
+      console.log('Rejected Misc Roll Promise for ' + reason);
+    });
+    return;
   }
 
   let rollSum = 0;
@@ -312,7 +301,14 @@ function roll(message) {
   }
 
   let constantRegex = /([\+\-]\s*\-?\s*\d+\s*)+(?!d)/i;
-  let constant = constantRegex.exec(rollInfo)[0].split(/\+/);
+  let constantString = constantRegex.exec(rollInfo);
+
+  if (constantString == null || constantString == '') {
+    constant = ['0'];
+  } else {
+    constant = constantString[0].split(/\+/);
+  }
+
   for (let element of constant) {
     if (element.trim().length < 1) {
       continue;
@@ -330,8 +326,24 @@ function roll(message) {
     });
 }
 
-function aniListQuery() {
-  // TODO: Check if Fubuki already has a valid access_token
+/**
+ * Asks AniList for a token and then runs either aniListAiring() or
+ * aniListSpecific()
+ * @param {string} queryType Which function to run upon completion
+ * @param {message} message A message object as defined in discord.js
+ * @param {string} title The title of the specific show wanted, or null.
+ */
+function aniListQuery(queryType, message, title) {
+  if (aniListToken != null && aniListToken.expires > (Date.now()/1000 - 60)) {
+    if ('airing' == queryType.toLowerCase()) {
+      aniListAiring(message);
+    } else if ('specific' == queryType.toLowerCase()) {
+      aniListSpecific(message, title);
+    } else {
+      Console.log('Invalid queryType in aniListQuery (misc.js)');
+      return;
+    }
+  }
 
   let authUri = config.anilist_path + 'auth/access_token?' +
                 config.anilist_grant + '&' + config.anilist_id +
@@ -345,7 +357,16 @@ function aniListQuery() {
 
   request(authOptions)
     .then( (body) => {
-      aniListToken = body.access_token;
+      aniListToken = {'access_token': body.access_token,
+                      'expires': body.expires};
+
+      if ('airing' == queryType.toLowerCase()) {
+        aniListAiring(message);
+      } else if ('specific' == queryType.toLowerCase()) {
+        aniListSpecific(message, title);
+      } else {
+        Console.log('Invalid queryType in aniListQuery (misc.js)');
+      }
     })
     .catch( (reason) => {
       console.log('Rejected Misc AniListQuery Promise for ' + reason);
@@ -356,27 +377,49 @@ function aniListQuery() {
  * @param {message} message A message object as defined in discord.js
  */
 function aniListAiring(message) {
+  let tdy = new Date();
+  let mth = tdy.getMonth();
+  let season = 'Winter';
+  if (mth > 3 && mth <= 6) {
+    season = 'Spring';
+  } else if (mth > 6 && mth <= 9) {
+    season = 'Summer';
+  } else if (mth > 9) {
+    season = 'Fall';
+  }
+
   let airingOptions = {
     method: 'GET',
-    uri: config.anilist_path + 'browse/anime?access_token=' +
-         aniListToken +
-         '&status=Currently Airing&airing_data=true&full_page=true',
+    uri: config.anilist_path + 'browse/anime?sort=popularity-desc&year='
+         + tdy.getFullYear() + '&type=Tv&season=' + season +
+         '&access_token=' + aniListToken.access_token + '&full_page=true',
     json: true,
   };
 
   request(airingOptions)
     .then( (body) => {
-      let resultString = '';
+      let resultString = [];
       let resultArray = body;
 
+      let ct = 1;
       for (let element of resultArray) {
-        resultString += element.title_english + '(' +
-                        element.title_japanse + '),';
+        if (!element.genres.includes('Hentai') &&
+            resultString.toString().length < 2000) {
+          resultString.push('**' + ct + '.** ' + element.title_english);
+          ct += 1;
+        }
+      }
+      if (resultString.toString().length > 2000) {
+        resultString.pop();
+        message.channel.send('Search results truncated due to length...')
+          .catch( (reason) => {
+            console.log('Truncated Currently Airing Message');
+          });
       }
 
-      message.channel.send(resultString.substring(0, resultString.length-1))
+      message.channel.send(resultString)
         .catch( (reason) => {
-          console.log('Rejected Misc A.L.A. Send Promise for ' +- reason);
+          console.log('Rejected Misc A.L.A. Send Promise for ' + reason);
         });
     })
     .catch( (reason) => {
@@ -388,10 +431,7 @@ function aniListAiring(message) {
  * @param {message} message A message object as defined in discord.js
  */
 function season(message) {
-  return Promise.series([
-    () => aniListQuery(),
-    () => aniListAiring(message)
-  ]);
+  aniListQuery('Airing', message, null);
 }
 
 /**
@@ -400,7 +440,7 @@ function season(message) {
  */
 function aniListSpecific(message, title) {
   let queryUri = config.anilist_path + 'anime/search/' + title +
-                 '?' + aniListToken;
+                 '?access_token=' + aniListToken.access_token;
 
   let queryOptions = {
     method: 'GET',
@@ -410,15 +450,30 @@ function aniListSpecific(message, title) {
 
   request(queryOptions)
     .then( (body) => {
-      let text = '';
-      let showInfo = body;
-
-      text += showInfo.title_english;
-      if (showInfo.title_english != showInfo.title_japanse) {
-        text += ' (' + showInfo.title_japanse + ')';
+      if (body == null || body == '') {
+        message.channel.send('I couldn\'t find that anime.')
+          .catch( (reason) => {
+            console.log('Rejected Misc A.L.S. Fail Promise for ' + reason);
+          });
+        return;
       }
-      text += '\nStatus: ' + showInfo.airing_status;
-      text += '\nDescription: ' + showInfo.description;
+
+      let text = '';
+      let showInfo = body[0];
+
+      text += '**' + showInfo.title_english + '**';
+      text += '\n**Status:** ' + showInfo.airing_status;
+      text += '\n**Description:** ' + showInfo.description.replace('<br>', ' ');
+
+      let startTime = String(showInfo.start_date_fuzzy);
+      let date = parseInt(startTime.substring(6, ));
+      let month = parseInt(startTime.substring(4, 6));
+      let year = parseInt(startTime.substring(0, 4));
+      let timeString = new Date(year, month, date);
+      let timeOptions = {month: 'long', day: 'numeric', year: 'numeric'};
+      text += '\n**Starting around:** ';
+      text += timeString.toLocaleDateString('en-US', timeOptions);
+      text += '\n*' + showInfo.image_url_lge + '*';
 
       message.channel.send(text)
         .catch( (reason) => {
@@ -435,10 +490,7 @@ function aniListSpecific(message, title) {
  */
 function aninfo(message) {
   let title = message.content.replace('!aninfo ', '');
-  return Promise.series([
-    () => aniListQuery(),
-    () => aniListSpecific(message, title)
-  ]);
+  aniListQuery('Specific', message, title);
 }
 
 /**

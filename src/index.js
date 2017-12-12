@@ -18,7 +18,7 @@ FUBUKI.on('message', (message) => {
   if (message.guild != undefined) {
     let cmds = message.content.toLowerCase().split(' ');
 
-	  features(message, cmds);
+    features(message, cmds);
   }
 });
 
@@ -27,8 +27,8 @@ FUBUKI.on('message', (message) => {
  * @param {*} commands The string containing a request to Fubuki
  */
 async function features(message, commands) {
-  try{
-	  switch (commands[0]) {
+  try {
+    switch (commands[0]) {
       case '!ping':
         message.channel.send('pong')
           .then(console.log(commands))
@@ -160,16 +160,6 @@ async function features(message, commands) {
       case '!delete':
         misc.deleteBooru(message);
         break;
-      case '!help':
-        message.channel.send('Help is on the way! Check your DMs.')
-          .catch( (reason) => {
-            console.log('Rejected Help Public Promise for ' + reason);
-          });
-        message.author.send(config.help_text)
-          .catch( (reason) => {
-            console.log('Rejected Help DM Promise for ' + reason);
-          });
-        break;
       case '!choose':
         misc.choose(message);
         break;
@@ -182,10 +172,19 @@ async function features(message, commands) {
       case '!aninfo':
         misc.aninfo(message);
         break;
+      case '!help':
+        message.channel.send('Help is on the way! Check your DMs.')
+          .catch( (reason) => {
+            console.log('Rejected Help Public Promise for ' + reason);
+          });
+        message.author.send(config.help_text)
+          .catch( (reason) => {
+            console.log('Rejected Help DM Promise for ' + reason);
+          });
+        break;
       default:
     }
-  }
-  catch (err) {
+  } catch (err) {
     console.log('Command Processing Failed because ', err);
   }
 };
