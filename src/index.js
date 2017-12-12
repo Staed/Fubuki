@@ -177,9 +177,14 @@ async function features(message, commands) {
           .catch( (reason) => {
             console.log('Rejected Help Public Promise for ' + reason);
           });
-        message.author.send(config.help_text)
+
+        message.author.send(config.help_text1)
           .catch( (reason) => {
-            console.log('Rejected Help DM Promise for ' + reason);
+            console.log('Rejected Help1 DM Promise for ' + reason);
+          });
+        message.author.send(config.help_text2)
+          .catch( (reason) => {
+            console.log('Rejected Help2 DM Promise for ' + reason);
           });
         break;
       default:
