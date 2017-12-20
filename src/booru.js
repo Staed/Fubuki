@@ -92,8 +92,8 @@ function getDanbooru(message, cmds) {
             log.info(reason, curFile, func, 'Reject no picture');
           });
         log.warn('NullPointer', curFile, func,
-                 'Recieved a null pointer instead of array at index ' +
-                selectedIdx + 'on ' + JSON.stringify(body));
+                 'Received a null pointer instead of array at index ' +
+                selectedIdx + ' on ' + JSON.stringify(body));
         return;
       }
 
