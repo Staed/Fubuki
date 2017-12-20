@@ -7,12 +7,7 @@ const logDir = path.join(__dirname + '/../logs');
 const fs = require('fs');
 
 if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir)
-}
-
-function customFormat(options) {
-    return options.timestamp() + ' [' + options.level.toUpperCase() + '] ' +
-           JSON.stringify(options.meta) + ' :: ' + options.message + '\n';
+    fs.mkdirSync(logDir);
 }
 
 let logger = new (winston.Logger)({
@@ -35,7 +30,7 @@ let logger = new (winston.Logger)({
         }),
         new (winston.transports.Console)({
             colorize: true,
-        })
+        }),
     ],
     exceptionHandlers: [
         new (winston.transports.DailyRotateFile)({
