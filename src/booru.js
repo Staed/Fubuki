@@ -84,7 +84,10 @@ function getDanbooru(message, cmds) {
       let imgUrl;
 
       if (body != null && body[selectedIdx] != null) {
-        imgUrl = config.danbooru_url + body[selectedIdx].file_url;
+        imgUrl = body[selectedIdx].file_url;
+        if (!imgUrl.match(/http.*/)) {
+          imgUrl = config.danbooru_url + imgUrl;
+        }
         prevImgId = body[selectedIdx].id;
       } else {
         message.channel.send('No picture found')
@@ -101,6 +104,8 @@ function getDanbooru(message, cmds) {
         let text = decodeURIComponent(tagStr) + '\n';
         sendGoogleShortenerRequest(message, text, imgUrl);
       } else {
+      let newUrl = tagStr.match(/http.*/) ? imgUrl : tagStr + 
+
         message.channel.send(decodeURIComponent(tagStr) + '\n' + imgUrl)
           .catch( (reason) => {
             log.info(reason, curFile, func, 'Reject booru URL');
