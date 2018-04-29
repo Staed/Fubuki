@@ -32,8 +32,6 @@
     "request": "2.x",
     "request-promise": "4.x",
     "yahoo-finance": ">=0.3.2",
-    "yeoman-doctor": "^2.1.0",
-    "yo": "^2.0.0",
     "ytdl-core": "^0.14.4",
     "winston": "2.x",
     "winston-daily-rotate-file": "^1.7.2",
