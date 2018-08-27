@@ -6,9 +6,9 @@ import * as misc from './misc';
 
 let prevImgId = null;
 
-const Logger = new LOGGER('booru');
-
 export class Booru {
+  private Logger = new LOGGER('Booru');
+
   private useShortener: boolean;
   private shortenerUrl: string;
   private googleApiKey: string;
@@ -44,7 +44,7 @@ export class Booru {
    * @param {string} imgUrl - The complete URL to the desired image link
    */
   private sendGoogleShortenerRequest(message: DISCORD.Message, text: string, imgUrl: string) {
-    Logger.setMethod('sendGoogleShortenerRequest');
+    this.Logger.setMethod('sendGoogleShortenerRequest');
 
     let options: request.Options = {
       method: 'POST',
@@ -61,23 +61,23 @@ export class Booru {
     request(options)
       .then( (body) => {
         if (body.id != null) {
-          Logger.verbose('shorten', 'Shortened url to ' + body.id);
+          this.Logger.verbose('shorten', 'Shortened url to ' + body.id);
           message.channel.send(text + body.id)
             .catch( (reason) => {
-              Logger.info(reason, 'Short URL message');
+              this.Logger.info(reason, 'Short URL message');
             });
         } else {
           message.channel.send(text + imgUrl)
             .catch( (reason) => {
-              Logger.info(reason, 'Full URL message');
+              this.Logger.info(reason, 'Full URL message');
             });
         }
       })
       .catch( (err) => {
-        Logger.warn(err, 'Unable to shorten url, returning long form');
+        this.Logger.warn(err, 'Unable to shorten url, returning long form');
         message.channel.send(text + imgUrl)
           .catch( (reason) => {
-            Logger.info(reason, 'URL message');
+            this.Logger.info(reason, 'URL message');
         });
       });
   }
@@ -87,7 +87,7 @@ export class Booru {
    * @param {string[]} cmds
    */
   public getDanbooru(message: DISCORD.Message, cmds: string[]) {
-    Logger.setMethod('getDanbooru');
+    this.Logger.setMethod('getDanbooru');
 
     let tagList = this.cleanGet(cmds);
     if (prevImgId != null) {
@@ -111,9 +111,9 @@ export class Booru {
         } else {
           message.channel.send('No picture found')
             .catch( (reason) => {
-              Logger.info(reason, 'Reject no picture');
+              this.Logger.info(reason, 'Reject no picture');
             });
-          Logger.warn('NullPointer', 'Received a null pointer instead of array at index ' + selectedIdx + ' on ' + JSON.stringify(body));
+          this.Logger.warn('NullPointer', 'Received a null pointer instead of array at index ' + selectedIdx + ' on ' + JSON.stringify(body));
           return;
         }
 
@@ -123,7 +123,7 @@ export class Booru {
         } else {
           message.channel.send(decodeURIComponent(tagStr) + '\n' + imgUrl)
             .catch( (reason) => {
-              Logger.info(reason, 'Reject booru URL');
+              this.Logger.info(reason, 'Reject booru URL');
             });
         }
     })
@@ -131,7 +131,7 @@ export class Booru {
       return console.error('Request Failed: ' + err);
       message.channel.send('Request Failed. Try again.')
         .catch( (reason) => {
-          Logger.info(reason, 'Reject request fail');
+          this.Logger.info(reason, 'Reject request fail');
         });
     });
   }

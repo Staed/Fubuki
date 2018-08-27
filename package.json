@@ -40,6 +40,7 @@
     "ytdl-core": "^0.14.4"
   },
   "devDependencies": {
+    "@types/cheerio": "^0.22.9",
     "@types/node": "^10.9.2",
     "@types/p-timeout": "^1.2.1",
     "@types/request-promise": "^4.1.42",

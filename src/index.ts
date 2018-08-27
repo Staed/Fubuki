@@ -9,7 +9,7 @@ import { Booru, BooruBuilder } from './services/Booru';
 // import * as musicPlayer from './services/musicplayer.mjs';
 // import * as misc from './services/misc.mjs';
 // import * as quote from './services/quote';
-// import * as finance from './services/finance.mjs';
+import FINANCE from './services/Finance';
 // ;
 const MAXTIMEOUT = config.MAXTIMEOUT;
 
@@ -21,6 +21,7 @@ const Danbooru: Booru = new BooruBuilder(config.use_shortener)
   .setDanbooruUrl(config.danbooru_url)
   .setDanbooruPath(config.danbooru_get)
   .build();
+const Finance = new FINANCE();
 
 FUBUKI.on('ready', () => {
   Logger.setMethod('on ready');
@@ -172,7 +173,7 @@ async function features(message: any, commands: any) {
           message.channel.send(badText)
             .catch((reason) => Logger.info(reason, 'Stock message'));
         } else {
-          // finance.getStock(message, commands[1], commands[2].toUpperCase());
+          Finance.getStock(message, commands[1], commands[2].toUpperCase());
         }
         break;
 
