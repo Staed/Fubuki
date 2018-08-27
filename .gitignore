@@ -1,5 +1,7 @@
-config.js
+config.*
 node_modules/
 quotes.txt
 quotes.json
 package-lock.json
+*.map
+dist/**/*

@@ -1,19 +1,20 @@
-let config = require('../config.js');
-let log = require('./logger.js');
-let request = require('request-promise');
-let cheerio = require('cheerio');
-let yahooFinance = require('yahoo-finance');
-let misc = require('./misc.js');
+import * as request from 'request-promise';
+import * as cheerio from 'cheerio';
+import * as yahooFinance from 'yahoo-finance';
 
-let curFile = 'finance.js';
+import * as config from '../../config';
+import * as log from './logger.mjs';
+import * as misc from './misc.mjs';
+
+const curFile = 'finance.mjs';
 
 /**
  * @param {message} message - A message object as defined in discord.js
  * @param {string} apiName - Name of the stock API to use
  * @param {string} company - Ticker symbol for a company on the stock market
  */
-function getStock(message, apiName, company) {
-  let func = 'getStock';
+export function getStock(message, apiName, company) {
+  const func = 'getStock';
 
   switch (apiName) {
     case 'bloomberg':
@@ -39,7 +40,7 @@ function getStock(message, apiName, company) {
  * @param {string} company - Ticker symbol for a company on the stock market
  */
 function getYahoo(message, company) {
-  let func = 'getYahoo';
+  const func = 'getYahoo';
 
   yahooFinance.quote({
     symbol: company,
@@ -97,7 +98,7 @@ function getYahoo(message, company) {
  * @param {string} company - Ticker symbol for a company on the stock market
  */
 function getGoogle(message, company) {
-  let func = 'getGoogle';
+  const func = 'getGoogle';
 
   let options =
     misc.getOptions(config.google_path, config.google_finance, company);
@@ -181,7 +182,7 @@ function getGoogle(message, company) {
  * @param {string} company - Ticker symbol for a company on the stock market
  */
 function getBloomberg(message, company) {
-  let func = 'getBloomberg';
+  const func = 'getBloomberg';
 
   if (company == undefined) {
     log.warn('undefined', curFile, func, 'No ticker specified');
@@ -268,5 +269,3 @@ function getBloomberg(message, company) {
         });
     });
 }
-
-module.exports = {getStock};

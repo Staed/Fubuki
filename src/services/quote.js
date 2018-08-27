@@ -1,9 +1,14 @@
-let jsonfile = require('jsonfile');
+const pTimeout = require('p-timeout');
+const elastic = require('elasticsearch');
 
-let log = require('./logger.js');
-let misc = require('./misc.js');
+const log = require('./logger.mjs.js');
 
-let curFile = 'quote.js';
+const curFile = 'quote';
+const client = new elastic.Client({
+  hosts: ['http://localhost:9200'],
+});
+
+pTimeout(openIndex(), 10000);
 
 /**
  *  @param {Collection.<Snowflake, GuildMember>} members - A Map of (id, member)
@@ -14,33 +19,27 @@ let curFile = 'quote.js';
 function matchMention(members, index, capitalCmds) {
   let user = capitalCmds[index];
   let displayName = '';
-  let username = '';
+  let id = '';
 
   if (capitalCmds.length > index) {
     if (/<@.?\d+>/.test(user)) {
       let userId = user.replace(/\D/g, '');
       let member = members.get(userId);
-      displayName = member.display_name;
-      username = member.user.username;
+      displayName = member.displayName;
+      id = member.id;
     } else {
       displayName = capitalCmds.slice(index).join(' ');
-      username = displayName;
 
       for (let [, obj] of members) {
-        let displayMatch =
-            obj.displayName.toLowerCase() == displayName.toLowerCase();
-        let usernameMatch =
-            obj.user.username.toLowerCase() == username.toLowerCase();
-
-        if (displayMatch || usernameMatch) {
-          username = obj.user.username;
+        if (obj.displayName.toLowerCase() == displayName.toLowerCase()) {
+          username = obj.user.id;
           break;
         }
       }
     }
   }
 
-  return [displayName, username];
+  return id;
 }
 
 /**
@@ -48,7 +47,7 @@ function matchMention(members, index, capitalCmds) {
  *  @param {string[]} quotes - String arrays containing [username, text]
  */
 function selectRandomQuote(channel, quotes) {
-  let func = 'selectRandomQuote';
+  const func = 'selectRandomQuote';
 
   if (!Object.keys(quotes).length) {
     log.verbose('empty', curFile, func, 'No quotes found');
@@ -75,73 +74,39 @@ function selectRandomQuote(channel, quotes) {
 }
 
 /**
- *  @param {channel} channel - The channel where the message originated
- *  @param {string} name - The username
- *  @param {message} message - The last message from that username
- */
-function addQuote(channel, name, message) {
-  let func = 'addQuote';
-
-  if (message != null && message.guild != undefined) {
-    let quoteList = [];
-
-    jsonfile.readFile('src\\res\\quotes.json', (err, data) => {
-      if (err) {
-        log.warn(err, curFile, func, 'Could not read file');
-        return;
-      }
-      quoteList = data;
-
-      obj = {
-        'guild': message.guild.id.toString(),
-        'name': name,
-        'content': message.content,
-      };
-      quoteList.push(obj);
-
-      jsonfile.writeFileSync('src\\res\\quotes.json', quoteList,
-                             {spaces: 2}, (err) => {
-        log.warn(err, curFile, func, 'Could not append quote to file');
-        return;
-      });
-    });
-
-    channel.send('Added quote from ' + name)
-      .catch( (reason) => {
-        log.info(reason, curFile, func, 'Reject quote added');
-      });
-    log.verbose('add', curFile, func, 'Quote added: \"' + message.content +
-                '\" from ' + name + ' in ' + message.guild.name);
-  } else {
-    channel.send('No quote from that user found in the last 100 messages')
-      .catch( (reason) => {
-        log.info(reason, curFile, func, 'Reject quote not found');
-      });
-    log.verbose('not found', curFile, func, 'No Quote found');
-  }
-}
-
-/**
  *  @param {message} message - A message object as defined in discord.js
  *  @param {string[]} capitalCmds - Strings containing parameters
  */
 function addUserQuote(message, capitalCmds) {
-  let func = 'addUserQuote';
+  const func = 'addUserQuote';
 
-  let name = matchMention(message.guild.members, 2, capitalCmds);
-  let lastMessage;
+  const id = matchMention(message.guild.members, 2, capitalCmds);
+  const name = members.get(id).displayName;
+
   message.channel.fetchMessages({limit: 100})
    .then( (messages) => {
      for (let [, value] of messages.entries()) {
-       if ((value.author.username.toLowerCase() == name[1].toLowerCase() ||
-            value.author.username.toLowerCase() == name[0].toLowerCase()) &&
-            /!quote( add)?.*/i.test(value.content) == false) {
+       if ((value.author.id === name) &&
+            /!.*/i.test(value.content) == false) {
          lastMessage = value;
          break;
        }
      }
 
-     addQuote(message.channel, name[1], lastMessage);
+     const entry = {
+       content: value.content,
+       guild: value.guild.id,
+       timestamp: value.createdTimestamp,
+       user: id,
+     };
+
+     elastic.index({
+       body: JSON.stringify(entry),
+       index: 'messages',
+       type: 'message',
+     });
+
+     message.channel.send('Saved: ' + value.content);
    })
    .catch( (reason) => {
      log.info(reason, curFile, func, 'Reject quote fetch');
@@ -153,27 +118,32 @@ function addUserQuote(message, capitalCmds) {
  *  @param {string[]} capitalCmds - Strings containing parameters
  */
 function searchQuote(message, capitalCmds) {
-  let func = 'searchQuote';
+  const func = 'searchQuote';
 
-  jsonfile.readFile('src\\res\\quotes.json', (err, quoteList) => {
-    if (err) {
-      log.warn(err, curFile, func, 'Could not read file');
-      return;
-    }
+  const userId = matchMention(message.guild.members, 1, capitalCmds);
 
-    let quotes = [];
-
-    let name = matchMention(message.guild.members, 1, capitalCmds);
-
-    for (let entry of quoteList) {
-      if (message.guild.id == entry.guild &&
-          (capitalCmds.length < 2 ||
-          name[1].toLowerCase() == entry.name.toLowerCase())) {
-        quotes.push(entry);
-      }
-    }
-
-    selectRandomQuote(message.channel, quotes);
+  client.search({
+    index: 'messages',
+    body: {
+      query: {
+        match: {
+          guild: message.guild.id,
+          user: userId,
+        },
+        function_score: {
+          functions: [
+            {
+              random_score: {
+                seed: Date.now(),
+              },
+            },
+          ],
+        },
+      },
+    },
+  })
+  .then((res) => {
+    res.hits.hits[0];
   });
 }
 
@@ -222,7 +192,7 @@ function listQuotes(message, cmds) {
       let i = 0;
       for (let entry of quoteList) {
         if (message.guild.id == entry.guild) {
-          list += misc.padRight(i + '. ', 5) + misc.padRight(entry.name, 18) +
+          list += padRight(i + '. ', 5) + padRight(entry.name, 18) +
                   ' - \" ' + entry.content + ' \"\n';
         }
         i++;
@@ -326,4 +296,60 @@ function quote(message, cmds, capitalCmds) {
   }
 }
 
-module.exports = {quote};
+/**
+ * Creates the Elastic DB if it doesn't already exist
+ */
+async function openIndex() {
+  const exists = await client.indices.exists({index: 'messages'});
+  if (!exists) {
+    client.indices.create({index: 'messages'})
+      .then(() => {
+        client.indices.putMapping({
+          body: {
+              properties: {
+                  displayName: {
+                       type: 'string',
+                  },
+                  userId: {
+                      index: 'true',
+                      type: 'integer',
+                  },
+              },
+          },
+          index: 'users',
+          timeout: '10s',
+          type: 'users',
+        });
+      });
+  }
+}
+
+/**
+ * @param {GuildMember} member The user to add
+ */
+function addUser(member) {
+  elastic.create({
+    body: {
+      displayName: member.displayName,
+      userId: member.id,
+    },
+    index: 'users',
+    type: 'users',
+  });
+}
+
+/**
+ * @param {string} orig - The original string
+ * @param {int} targetLength - The string's  minimum length once padded
+ * @return {string} - The original string with the padding added
+ */
+function padRight(orig, targetLength) {
+  let text = orig;
+  while (text.length < targetLength) {
+    text += ' ';
+  }
+
+  return text;
+}
+
+module.exports = {quote, addUser};

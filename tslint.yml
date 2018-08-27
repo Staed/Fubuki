@@ -1,0 +1,9 @@
+extends: "tslint:recommended", "tslint-react", "tslint-config-prettier"
+defaultSeverity: "warning",
+linterOptions:
+    exclude: "node_modules/**/*.ts"
+rules:
+    new-parens: true
+    no-arg: true
+    no-bitwise: true
+    no-consecutive-blank-lines: true

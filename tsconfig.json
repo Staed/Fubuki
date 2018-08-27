@@ -1,0 +1,20 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "target": "es2018",
+        "outDir": "dist",
+        "lib": [
+            "es2015"
+        ],
+        "module": "commonjs",
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "allowJs": true
+    },
+    "include": [
+        "./src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

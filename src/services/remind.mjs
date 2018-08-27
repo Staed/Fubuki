@@ -1,12 +1,12 @@
-let log = require('./logger.js');
+import * as log from './logger.js';
 
-let curFile = 'remind.js';
+const curFile = 'remind.mjs';
 
 /**
  * @param {message} message
  */
-function remindMe(message) {
-  let func = 'remindMe';
+export function remindMe(message) {
+  const func = 'remindMe';
 
   let remindRegex = new RegExp([
     '.+?in[\\s]+(\\d+\[\\s]+(hour(s)?|minute(s)?))?',
@@ -66,5 +66,3 @@ function remindMe(message) {
       });
   }, remindTimer*1000);
 }
-
-module.exports = {remindMe};

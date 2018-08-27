@@ -1,8 +1,9 @@
-let config = require('../config.js');
-let log = require('./logger.js');
-const ytdl = require('ytdl-core');
+import * as ytdl from 'ytdl-core';
 
-let curFile = 'musicplayer.js';
+import * as config from '../../config';
+import * as log from './logger.js';
+
+const curFile = 'musicplayer.mjs';
 
 let lastPlayed = '';
 let playlistQueue = [];
@@ -13,8 +14,8 @@ let ytHeader = /http(s?):\/\/(www.)?youtube.com\/watch\?v=/;
  * @param {guild} guild - The guild that the command orignated from
  * @return {Promise<VoiceConnection>}
  */
-function connect(guild) {
-  let func = 'connect';
+export function connect(guild) {
+  const func = 'connect';
 
   let voiceJoin = guild.channels.find( (val) =>
                                         val.name === config.default_channel);
@@ -38,8 +39,8 @@ function connect(guild) {
 /** Ends the voice channel and clears the playlist queue
  * @param {guild} guild - The guild that the command orignated from
  */
-function disconnect(guild) {
-  let func = 'disconnect';
+export function disconnect(guild) {
+  const func = 'disconnect';
 
   if (guild.voiceConnection === null) {
     return;
@@ -53,8 +54,8 @@ function disconnect(guild) {
 /**
  * @param {message} message - A message object as defined in discord.js
  */
-function play(message) {
-  let func = 'play';
+export function play(message) {
+  const func = 'play';
 
   let nextVid = message.content.split(' ')[1];
   if (nextVid == undefined) {
@@ -101,7 +102,7 @@ function play(message) {
  * @param {message} message - A message object as defined in discord.js
  */
 function playQueued(nextVid, message) {
-  let func = 'playQueued';
+  const func = 'playQueued';
 
   const STREAMOPTIONS = {seek: 0, volume: 1};
 
@@ -185,7 +186,7 @@ function playQueued(nextVid, message) {
  * @param {message} message - A message object as defined in discord.js
  */
 function playNext(message) {
-  let func = 'playNext';
+  const func = 'playNext';
 
   playlistQueue.shift();
   if (playlistQueue.length > 0) {
@@ -198,8 +199,8 @@ function playNext(message) {
 /**
  * @param {message} message
  */
-function skip(message) {
-  let func = 'skip';
+export function skip(message) {
+  const func = 'skip';
 
   log.verbose('skip', curFile, func, playlistQueue[0].replace(ytHeader, '') +
               ' skipped');
@@ -213,8 +214,8 @@ function skip(message) {
 /**
  * @param {message} message
  */
-function repeat(message) {
-  let func = 'repeat';
+export function repeat(message) {
+  const func = 'repeat';
 
   message.content = '!play ' + lastPlayed;
   if (playlistQueue.length === 0) {
@@ -240,8 +241,8 @@ function repeat(message) {
 /**
  * @param {channel} channel - The channel from which the message orignated
  */
-function nowPlaying(channel) {
-  let func = 'nowPlaying';
+export function nowPlaying(channel) {
+  const func = 'nowPlaying';
 
   if (playlistQueue.length === 0) {
     channel.send('Nothing is being played but my heart.')
@@ -267,8 +268,8 @@ function nowPlaying(channel) {
 /**
  * @param {message} message
  */
-function radio(message) {
-  let func = 'radio';
+export function radio(message) {
+  const func = 'radio';
 
   let url = message.content.split(' ')[1];
   let startLen = 0;
@@ -337,17 +338,6 @@ function radio(message) {
 /**
  * @param {guild} guild  The guild from which to disconnect
  */
-function stopRadio(guild) {
+export function stopRadio(guild) {
   disconnect(guild);
 }
-
-module.exports = {
-  connect,
-  disconnect,
-  play,
-  skip,
-  repeat,
-  nowPlaying,
-  radio,
-  stopRadio,
-};

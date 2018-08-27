@@ -1,6 +1,8 @@
 /* eslint-disable */
 let config = {};
 
+config.MAXTIMEOUT = 10000;
+
 config.discord_token = 'YOUR_DISCORD_TOKEN'; // TODO
 config.id = 0;
 
