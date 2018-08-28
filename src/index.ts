@@ -5,10 +5,10 @@ const FUBUKI = new DISCORD.Client();
 import config from './config';
 import LOGGER from './util/Logger';
 import { Booru, BooruBuilder } from './services/Booru';
-// import * as remind from './services/remind.mjs';
+import REMINDER from './services/Reminder';
 // import * as musicPlayer from './services/musicplayer.mjs';
 // import * as misc from './services/misc.mjs';
-// import * as quote from './services/quote';
+import QUOTE from './services/Quote';
 import FINANCE from './services/Finance';
 // ;
 const MAXTIMEOUT = config.MAXTIMEOUT;
@@ -21,7 +21,9 @@ const Danbooru: Booru = new BooruBuilder(config.use_shortener)
   .setDanbooruUrl(config.danbooru_url)
   .setDanbooruPath(config.danbooru_get)
   .build();
+const Quote = new QUOTE();
 const Finance = new FINANCE();
+const Reminder = new REMINDER();
 
 FUBUKI.on('ready', () => {
   Logger.setMethod('on ready');
@@ -158,7 +160,7 @@ async function features(message: any, commands: any) {
 
       case '!quote':
         if (commands[1] !== 'fubuki' && commands[2] !== 'fubuki') {
-          // quote.quote(message, commands, message.content.split(' '));
+          Quote.quote(message, commands, message.content.split(' '));
         } else {
           message.channel.send('I\'m not going to quote myself!')
             .then(Logger.verbose('misuse', 'Refused to quote self'))
@@ -215,7 +217,7 @@ async function features(message: any, commands: any) {
 };
 
 FUBUKI.on('guildMemberAdd', async (member) => {
-  // quote.addUser(Number.parseInt(member.id));
+  Quote.addUser(member.displayName, member.id);
 });
 
 FUBUKI.on('disconnected', () => {

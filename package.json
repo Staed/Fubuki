@@ -27,7 +27,9 @@
     "bluebird": "3.x",
     "cheerio": "*",
     "discord.js": "11.x",
+    "elastic-builder": "^2.0.2",
     "elasticsearch": "^15.1.1",
+    "flatqueue": "^1.0.0",
     "p-timeout": "^2.0.1",
     "path": "^0.12.7",
     "request": "2.x",
@@ -41,6 +43,7 @@
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.9",
+    "@types/elasticsearch": "^5.0.25",
     "@types/node": "^10.9.2",
     "@types/p-timeout": "^1.2.1",
     "@types/request-promise": "^4.1.42",

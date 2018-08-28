@@ -41,7 +41,7 @@ export default class Finance {
    * @param {message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
-  private getYahoo(message, company) {
+  private getYahoo(message: DISCORD.Message, company: string) {
     this.Logger.setMethod('getYahoo');
 
     yahooFinance.quote({
@@ -99,7 +99,7 @@ export default class Finance {
    * @param {message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
-  private getGoogle(message, company) {
+  private getGoogle(message: DISCORD.Message, company: string) {
     this.Logger.setMethod('getGoogle');
 
     let options =
@@ -183,7 +183,7 @@ export default class Finance {
    * @param {message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
-  private getBloomberg(message, company) {
+  private getBloomberg(message: DISCORD.Message, company: string) {
     this.Logger.setMethod('getBloomberg');
 
     if (company == undefined) {
