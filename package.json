@@ -29,7 +29,6 @@
     "discord.js": "11.x",
     "elastic-builder": "^2.0.2",
     "elasticsearch": "^15.1.1",
-    "flatqueue": "^1.0.0",
     "p-timeout": "^2.0.1",
     "path": "^0.12.7",
     "request": "2.x",
