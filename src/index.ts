@@ -5,7 +5,7 @@ const FUBUKI = new DISCORD.Client();
 import config from './config';
 import LOGGER from './util/Logger';
 import { Booru, BooruBuilder } from './services/Booru';
-import REMINDER from './services/Reminder';
+import * as REMINDER from './services/Reminder';
 // import * as musicPlayer from './services/musicplayer.mjs';
 // import * as misc from './services/misc.mjs';
 import QUOTE from './services/Quote';
@@ -23,7 +23,8 @@ const Danbooru: Booru = new BooruBuilder(config.use_shortener)
   .build();
 const Quote = new QUOTE();
 const Finance = new FINANCE();
-const Reminder = new REMINDER();
+const Reminder = new REMINDER.default();
+REMINDER.startReminder(Reminder, FUBUKI);
 
 FUBUKI.on('ready', () => {
   Logger.setMethod('on ready');
@@ -91,7 +92,7 @@ async function features(message: any, commands: any) {
         break;
 
       case '!remindme':
-        // remind.remindMe(message);
+        Reminder.remindMe(message);
         break;
 
       case '!play':
