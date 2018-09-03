@@ -29,6 +29,7 @@
     "discord.js": "11.x",
     "elastic-builder": "^2.0.2",
     "elasticsearch": "^15.1.1",
+    "node-opus": "^0.3.0",
     "p-timeout": "^2.0.1",
     "path": "^0.12.7",
     "request": "2.x",
@@ -39,7 +40,7 @@
     "winston-daily-rotate-file": "^3.3.2",
     "yahoo-finance": ">=0.3.2",
     "yo": "^2.0.0",
-    "ytdl-core": "^0.14.4"
+    "ytdl-core": "^0.25.1"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.9",

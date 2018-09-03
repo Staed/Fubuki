@@ -6,7 +6,7 @@ import config from './config';
 import LOGGER from './util/Logger';
 import { Booru, BooruBuilder } from './services/Booru';
 import * as REMINDER from './services/Reminder';
-// import * as musicPlayer from './services/musicplayer.mjs';
+import MUSICPLAYER from './services/MusicPlayer';
 // import * as misc from './services/misc.mjs';
 import QUOTE from './services/Quote';
 import FINANCE from './services/Finance';
@@ -21,6 +21,7 @@ const Danbooru: Booru = new BooruBuilder(config.use_shortener)
   .setDanbooruUrl(config.danbooru_url)
   .setDanbooruPath(config.danbooru_get)
   .build();
+const MusicPlayer = new MUSICPLAYER();
 const Quote = new QUOTE();
 const Finance = new FINANCE();
 const Reminder = new REMINDER.default();
@@ -96,36 +97,36 @@ async function features(message: any, commands: any) {
         break;
 
       case '!play':
-        // musicPlayer.play(message);
+        try{
+          MusicPlayer.play(message);
+        } catch (err) { Logger.error(err, 'MusicPlayer Play') }
         message.delete()
-          .then( (msg) => {
-            Logger.verbose('delete', 'Deleted !play message from ' + msg.author);
-          })
+          .then((msg: DISCORD.Message) => Logger.verbose('delete', 'Deleted !play message from ' + msg.author.username))
           .catch((reason) => Logger.info(reason, 'Delete play message'));
         break;
 
       case '!connect':
-        // musicPlayer.connect(message.guild);
+        MusicPlayer.connect(message.guild);
         break;
 
       case '!disconnect':
-        // musicPlayer.disconnect(message.guild);
+        MusicPlayer.disconnect(message.guild);
         break;
 
       case '!skip':
-        // musicPlayer.skip(message);
+        MusicPlayer.skip(message);
         break;
 
       case '!repeat':
-        // musicPlayer.repeat(message);
+        MusicPlayer.repeat(message);
         break;
 
       case '!nowplaying':
-        // musicPlayer.nowPlaying(message.channel);
+        MusicPlayer.nowPlaying(message.channel);
         break;
 
       case '!radio':
-        // musicPlayer.radio(message);
+        MusicPlayer.radio(message);
         if (/youtube.com/.test(message.content)) {
           message.delete()
             .then( (msg) => {
@@ -136,7 +137,7 @@ async function features(message: any, commands: any) {
         break;
 
       case '!stopradio':
-        // musicPlayer.stopRadio(message.guild);
+        MusicPlayer.stopRadio(message.guild);
         break;
 
       case '!urban':
