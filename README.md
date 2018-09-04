@@ -43,7 +43,8 @@ The latest stable release is [here](https://github.com/Staed/Fubuki/releases/lat
 Fubuki depends on Node and ElasticSearch and will need you to install both.
 In addition, if you are running Fubuki on a Windows machine, you will need to install Windows-Build-Tools via NPM with the command `npm i --global --production windows-build-tools`
 After getting all these dependencies sorted out, unzip Fubuki into the folder of choice.
-Run `npm start` from within that directory via the Terminal or, if you prefer to avoid it and are on a Windows machine, run `start.bat`.
+Run `npm i` from within that directory via the Terminal or, if you prefer to avoid it and are on a Windows machine, run `install.bat`.
+After finishing the installation, run `npm start` within the directory via the Terminal or `start.bat` on a Windows machine to start Fubuki.
 
 License
 -------
