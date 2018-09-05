@@ -7,10 +7,13 @@ import LOGGER from './util/Logger';
 import { Booru, BooruBuilder } from './services/Booru';
 import * as REMINDER from './services/Reminder';
 import MUSICPLAYER from './services/MusicPlayer';
-// import * as misc from './services/misc.mjs';
+import MISC from './util/Misc';
 import QUOTE from './services/Quote';
 import FINANCE from './services/Finance';
-// ;
+
+import URBAN from './services/UrbanDictionary';
+import ANIME from './services/Anime';
+
 const MAXTIMEOUT = config.MAXTIMEOUT;
 
 const Logger = new LOGGER('index');
@@ -21,11 +24,17 @@ const Danbooru: Booru = new BooruBuilder(config.use_shortener)
   .setDanbooruUrl(config.danbooru_url)
   .setDanbooruPath(config.danbooru_get)
   .build();
-const MusicPlayer = new MUSICPLAYER();
-const Quote = new QUOTE();
-const Finance = new FINANCE();
+
 const Reminder = new REMINDER.default();
 REMINDER.startReminder(Reminder, FUBUKI);
+
+const MusicPlayer = new MUSICPLAYER();
+const Misc = new MISC();
+const Quote = new QUOTE();
+const Finance = new FINANCE();
+
+const Urban = new URBAN();
+const Anime = new ANIME();
 
 FUBUKI.on('ready', () => {
   Logger.setMethod('on ready');
@@ -46,23 +55,22 @@ FUBUKI.on('message', (message) => {
 });
 
 /**
- * @param {*} message A message object as defined in discord.js
- * @param {*} commands The string containing a request to Fubuki
+ * @param {DISCORD.Message} message A message object as defined in discord.js
+ * @param {string[]} commands The string containing a request to Fubuki
  */
-async function features(message: any, commands: any) {
+async function features(message: DISCORD.Message, commands: string[]) {
   Logger.setMethod('features');
-
   try {
     switch (commands[0]) {
       case '!ping':
         message.channel.send('pong')
-          .then(Logger.verbose('ping', commands))
+          .then(() => Logger.verbose('ping', commands.join(' ')))
           .catch((reason) => Logger.info(reason, 'Ping message'));
         break;
 
       case '!sleep':
         message.channel.send('Logging off. Bye!')
-          .then(Logger.verbose('sleep', 'Logging off'))
+          .then(() => Logger.verbose('sleep', 'Logging off'))
           .catch((reason) => Logger.info(reason, 'Sleep message'));
         message.delete()
           .catch((reason) => Logger.info(reason, 'Delete sleep message'));
@@ -122,7 +130,7 @@ async function features(message: any, commands: any) {
         break;
 
       case '!nowplaying':
-        MusicPlayer.nowPlaying(message.channel);
+        MusicPlayer.nowPlaying(message.channel as DISCORD.TextChannel);
         break;
 
       case '!radio':
@@ -141,23 +149,23 @@ async function features(message: any, commands: any) {
         break;
 
       case '!urban':
-        // misc.urbanDefine(message, commands);
+        Urban.getDefinition(message, commands);
         break;
 
       case '!avatar':
-        // misc.getAvatar(message, commands);
+        Misc.getAvatar(message, commands);
         break;
 
       case '!a':
-        // misc.getAvatar(message, commands);
+        Misc.getAvatar(message, commands);
         break;
 
       case '!coinflip':
-        // misc.coinFlip(message);
+        Misc.coinFlip(message);
         break;
 
       case '!rate':
-        // misc.rate(message, commands);
+        Misc.rate(message, commands);
         break;
 
       case '!quote':
@@ -165,7 +173,7 @@ async function features(message: any, commands: any) {
           Quote.quote(message, commands, message.content.split(' '));
         } else {
           message.channel.send('I\'m not going to quote myself!')
-            .then(Logger.verbose('misuse', 'Refused to quote self'))
+            .then(() => Logger.verbose('misuse', 'Refused to quote self'))
             .catch((reason) => Logger.info(reason, 'Self-Quote message'));
         }
         break;
@@ -182,23 +190,23 @@ async function features(message: any, commands: any) {
         break;
 
       case '!delete':
-        // misc.deleteBooru(message);
+        Danbooru.deleteBooru(message);
         break;
 
       case '!choose':
-        // misc.choose(message);
+        Misc.choose(message);
         break;
 
       case '!roll':
-        // misc.roll(message);
+        Misc.roll(message);
         break;
 
       case '!season':
-        // misc.season(message);
+        Anime.season(message);
         break;
 
       case '!aninfo':
-        // misc.aninfo(message);
+        Anime.aninfo(message);
         break;
 
       case '!help':

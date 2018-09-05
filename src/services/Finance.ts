@@ -5,13 +5,14 @@ import * as DISCORD from 'discord.js';
 
 import config from '../config';
 import LOGGER from '../util/Logger';
-import * as misc from './misc';
+import MISC from '../util/Misc';
 
 export default class Finance {
   private Logger = new LOGGER('Finance');
+  private Misc = new MISC();
 
   /**
-   * @param {message} message - A message object as defined in discord.js
+   * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string} apiName - Name of the stock API to use
    * @param {string} company - Ticker symbol for a company on the stock market
    */
@@ -38,7 +39,7 @@ export default class Finance {
   }
 
   /**
-   * @param {message} message - A message object as defined in discord.js
+   * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
   private getYahoo(message: DISCORD.Message, company: string) {
@@ -77,9 +78,9 @@ export default class Finance {
 
       let output = '```';
       for (let i = 0; i < data.length; i++) {
-        output += misc.padRight(data[i][0].toString(), 15) + ' ';
-        output += misc.padRight(data[i][1].toString(), 25) + ' ';
-        output += misc.padRight(data[i][2].toString(), 15) + ' ';
+        output += MISC.padRight(data[i][0].toString(), 15) + ' ';
+        output += MISC.padRight(data[i][1].toString(), 25) + ' ';
+        output += MISC.padRight(data[i][2].toString(), 15) + ' ';
         output += data[i][3] + '\n';
       }
       output += '```';
@@ -96,14 +97,14 @@ export default class Finance {
   }
 
   /**
-   * @param {message} message - A message object as defined in discord.js
+   * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
   private getGoogle(message: DISCORD.Message, company: string) {
     this.Logger.setMethod('getGoogle');
 
     let options =
-      misc.getOptions(config.google_path, config.google_finance, company);
+      this.Misc.getOptions(config.google_path, config.google_finance, company);
 
     request(options)
       .then((body) => {
@@ -146,9 +147,9 @@ export default class Finance {
 
         let output = '```';
         for (let i = 0; i < data.length - 1; i += 2) {
-          output += misc.padRight(data[i][0], 12) + ' ';
-          output += misc.padRight(data[i][1], 23) + ' ';
-          output += misc.padRight(data[i + 1][0], 13) + ' ';
+          output += MISC.padRight(data[i][0], 12) + ' ';
+          output += MISC.padRight(data[i][1], 23) + ' ';
+          output += MISC.padRight(data[i + 1][0], 13) + ' ';
           output += data[i + 1][1] + '\n';
         }
         output += '```';
@@ -180,7 +181,7 @@ export default class Finance {
   }
 
   /**
-   * @param {message} message - A message object as defined in discord.js
+   * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
   private getBloomberg(message: DISCORD.Message, company: string) {
@@ -197,7 +198,7 @@ export default class Finance {
     }
 
     let options =
-      misc.getOptions(config.bloomberg_path, config.bloomberg_quote, company);
+      this.Misc.getOptions(config.bloomberg_path, config.bloomberg_quote, company);
 
     request(options)
       .then((body) => {
@@ -244,9 +245,9 @@ export default class Finance {
 
         let output = '```';
         for (let i = 0; i < data.length - 1; i += 2) {
-          output += misc.padRight(data[i][0], 17) + ' ';
-          output += misc.padRight(data[i][1], 20) + ' ';
-          output += misc.padRight(data[i + 1][0], 20) + ' ';
+          output += MISC.padRight(data[i][0], 17) + ' ';
+          output += MISC.padRight(data[i][1], 20) + ' ';
+          output += MISC.padRight(data[i + 1][0], 20) + ' ';
           output += data[i + 1][1] + '\n';
         }
         output += '```';

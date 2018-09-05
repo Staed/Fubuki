@@ -2,12 +2,14 @@ import * as DISCORD from 'discord.js';
 import * as request from 'request-promise';
 
 import LOGGER from '../util/Logger';
-import * as misc from './misc';
+import MISC from '../util/Misc';
+import config from '../config';
 
 let prevImgId = null;
 
 export class Booru {
   private Logger = new LOGGER('Booru');
+  private Misc = new MISC();
 
   private useShortener: boolean;
   private shortenerUrl: string;
@@ -39,7 +41,7 @@ export class Booru {
   }
 
   /**
-   * @param {message} message - A message object as defined in discord.js
+   * @param {DISCORD.Message} message - A message object as defined in discord.js
    * @param {string} text - The text portion of the reply
    * @param {string} imgUrl - The complete URL to the desired image link
    */
@@ -83,7 +85,7 @@ export class Booru {
   }
 
   /**
-   * @param {message} message - A message object as defined in discord.js
+   * @param {DISCORD.Message} message - A message object as defined in discord.js
    * @param {string[]} cmds
    */
   public getDanbooru(message: DISCORD.Message, cmds: string[]) {
@@ -94,7 +96,7 @@ export class Booru {
         tagList += '+-id:' + prevImgId;
     }
     let options =
-        misc.getOptions(this.danbooruAuth, this.danbooruPath, tagList);
+        this.Misc.getOptions(this.danbooruAuth, this.danbooruPath, tagList);
 
     request(options)
       .then( (body) => {
@@ -136,6 +138,32 @@ export class Booru {
     });
   }
 
+  /**
+   * @param {DISCORD.Message} message - A message object as defined in discord.js
+   */
+  public deleteBooru(message: DISCORD.Message) {
+    const func = 'deleteBooru';
+
+    message.channel.fetchMessages({limit: 100})
+      .then((msgs) => {
+        for (let [, value] of msgs.entries()) {
+          if (value.author.id == config.id && /\*\*Tags:\*\* .*\nhttps:.*/.test(value.content) == true) {
+            value.delete()
+              .catch((reason) => this.Logger.info(reason, 'Reject delete'));
+            this.Logger.verbose('', 'Deleted ' + value.content.replace('\n', '\t'));
+            return;
+          }
+        }
+
+        message.channel.send('No booru post to delete in the last 100 messages!')
+          .catch((reason) => this.Logger.info(reason, 'Reject delete exhaust'));
+      })
+      .catch((err) => {
+        message.channel.send('Failed to fetch past messages')
+          .catch( (reason) => this.Logger.info(reason, 'Reject delete not found'));
+        this.Logger.warn('err', 'No messages found');
+      });
+  }
 }
 
 export class BooruBuilder {
