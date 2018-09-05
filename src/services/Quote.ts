@@ -5,7 +5,7 @@ import * as Discord from 'discord.js';
 
 import LOGGER from '../util/Logger';
 import config from '../config';
-import { padRight } from './misc';
+import MISC from '../util/Misc';
 
 interface Entry {
   content: string
@@ -17,27 +17,59 @@ interface Entry {
 export default class Quote {
   private Logger: LOGGER;
   private client: elastic.Client;
+  private Misc: MISC;
 
   constructor() {
     this.Logger = new LOGGER('Quote');
     this.client = new elastic.Client({ hosts: ['http://localhost:9200' ]});
+    this.Misc = new MISC();
 
     pTimeout(this.openIndex(), config.MAXTIMEOUT);
   }
 
   /**
    * Creates the Elastic DB if it doesn't already exist
+   * @return {Promise<void>}
    */
   private async openIndex(): Promise<void> {
-    const exists = await this.client.indices.exists({index: 'messages'});
-    if (!exists) {
+    const existsMessages = await this.client.indices.exists({index: 'messages'});
+    if (!existsMessages) {
       this.client.indices.create({index: 'messages'})
         .then(() => {
           this.client.indices.putMapping({
             body: {
               properties: {
+                content: {
+                  type: 'text',
+                },
+                guild: {
+                  type: 'integer'
+                },
+                timestamp: {
+                  index: 'true',
+                  type: 'date'
+                },
+                user: {
+                  type: 'integer',
+                }
+              },
+            },
+            index: 'messages',
+            timeout: '10s',
+            type: 'message',
+        });
+      });
+    }
+
+    const existsUsers = await this.client.indices.exists({index: 'users'});
+    if (!existsUsers) {
+      this.client.indices.create({index: 'users'})
+        .then(() => {
+          this.client.indices.putMapping({
+            body: {
+              properties: {
                 displayName: {
-                  type: 'string',
+                  type: 'text',
                 },
                 userId: {
                   index: 'true',
@@ -47,47 +79,19 @@ export default class Quote {
             },
             index: 'users',
             timeout: '10s',
-            type: 'users',
+            type: 'user',
         });
       });
     }
+
     return;
   }
 
-  /**
-   * @param members {Discord.Collection<Discord.Snowflake, Discord.GuildMember>}
-   * @param index {number} index - The index in cmds where this @mention is found
-   * @param capitalCmds {string[]} capitalCmds - Strings containing parameters
-   * @return {string} - The id of the member corresponding to this @mention
-   */
-  private matchMention(members: Discord.Collection<Discord.Snowflake, Discord.GuildMember>, index: number, capitalCmds: string[]) {
-    const user = capitalCmds[index];
-    let displayName, id: string;
-
-    if (capitalCmds.length > index) {
-      if (/<@.?\d+>/.test(user)) {
-        const userId = user.replace(/\D/g,'');
-        const member = members.get(userId);
-        displayName = member.displayName;
-        id = member.id;
-      } else {
-        displayName = capitalCmds.slice(index).join(' ');
-
-        for (let [, member] of members) {
-          if (member.displayName.toLowerCase() === displayName.toLowerCase()) {
-            id = member.user.id;
-            break;
-          }
-        }
-      }
-    }
-
-    return id;
-  }
+  
 
   /**
-   * @param message {Discord.Message}
-   * @param permission {Discord.PermissionResolvable}
+   * @param {Discord.Message} message
+   * @param {Discord.PermissionResolvable} permission
    * @return {boolean}
    */
   private checkPermission(message: Discord.Message, permission: Discord.PermissionResolvable): boolean {
@@ -113,7 +117,7 @@ export default class Quote {
    */
   private addUserQuote(message: Discord.Message, capitalCmds: string[]) {
     this.Logger.setMethod(this.addUserQuote.name);
-    const id = this.matchMention(message.guild.members, 2, capitalCmds);
+    const id = (this.Misc.matchMention(message.guild.members, capitalCmds.slice(2).join(' ')) as Discord.GuildMember).id;
 
     let lastMessage;
 
@@ -152,18 +156,21 @@ export default class Quote {
   private searchQuote(message: Discord.Message, capitalCmds: string[]) {
     this.Logger.setMethod(this.searchQuote.name);
 
-    const userId = this.matchMention(message.guild.members, 1, capitalCmds);
+    const user = this.Misc.matchMention(message.guild.members, capitalCmds.slice(1).join(' '));
+    this.Logger.verbose('Quote search result', 'Found matching member: ' + user.displayName + '@' + user.id);
 
     this.client.search({
       index: 'messages',
       body: esb.requestBodySearch()
-              .query(esb.matchQuery('guild', message.guild.id))
-              .query(esb.matchQuery('user', userId))
-              .query(esb.functionScoreQuery().function(esb.randomScoreFunction())).toJSON()
+              .query(esb.boolQuery()
+                        .must(esb.termQuery('guild', message.guild.id))
+                        .must(esb.termQuery('user', user.id))).toJSON()
     })
     .then((res) => {
-      const entry: Entry = res.hits.hits[0]._source as Entry;
-      const quote: string = entry.content + '\n\t\t.' + message.guild.members.get(entry.user).nickname;
+      const index = Math.floor(Math.random() * res.hits.hits.length);
+
+      const entry: Entry = res.hits.hits[index]._source as Entry;
+      const quote: string = entry.content + '\n\tt. ' + message.guild.members.get(entry.user).nickname;
 
       message.channel.send(quote)
         .catch((err) => this.Logger.error(err, 'Search quote message'));
@@ -184,11 +191,11 @@ export default class Quote {
                 .query(esb.matchQuery('guild', message.guild.id)).toJSON()
       })
       .then((results) => {
-        let list: string;
+        let list: string = '';
         for (let i = 0; i < results.hits.hits.length; i++) {
           const entry: Entry = results.hits.hits[i]._source as Entry;
-          list += padRight(i + '. ', 5);
-          list += padRight(message.guild.members.get(entry.user).displayName, 18);
+          list += MISC.padRight(i + '. ', 5);
+          list += MISC.padRight(message.guild.members.get(entry.user).displayName, 18);
           list += ' - \"' + entry.content + ' \"\n';
         }
       
@@ -198,21 +205,31 @@ export default class Quote {
     }
   }
 
+  private randomQuote(message: Discord.Message) {
+    this.Logger.setMethod(this.randomQuote.name);
+
+    this.Logger.warn('Random Quote', 'You shouldn\'t be here');
+  }
+
   /**
    * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string[]} cmds - Strings containing lowercased parameters
    * @param {string[]} capitalCmds - Strings containing parameters
    */
   public quote(message: Discord.Message, cmds: string[], capitalCmds: string[]) {
-    switch (cmds[1]) {
-      case 'add':
-        this.addUserQuote(message, capitalCmds);
-        break;
-      case 'list':
-        this.listQuotes(message);
-        break;
-      default:
-        this.searchQuote(message, capitalCmds);
+    if (cmds.length > 1) {
+      switch (cmds[1]) {
+        case 'add':
+          this.addUserQuote(message, capitalCmds);
+          break;
+        case 'list':
+          this.listQuotes(message);
+          break;
+        default:
+          this.searchQuote(message, capitalCmds);
+      }
+    } else {
+      this.randomQuote(message);
     }
   }
 
@@ -223,7 +240,7 @@ export default class Quote {
         userId: memberId,
       },
       index: 'users',
-      type: 'users',
+      type: 'user',
     });
   }
 }

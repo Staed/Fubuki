@@ -75,7 +75,7 @@ export default class Reminder {
   }
 
   /**
-   * @param client The Discord client the Bot is using
+   * @param {Discord.Client} client The Discord client the Bot is using
    */
   public async queueChecker(client: Discord.Client) {
     let top: Note = this.queue.top();
@@ -95,11 +95,19 @@ export default class Reminder {
     }
   }
 
+  /**
+   * @param {Note} top 
+   * @return {boolean}
+   */
   private nullOrUndefinedCheckerForDateNote(top: Note): boolean {
     return !isNullOrUndefined(top) && !isNullOrUndefined(top.timestamp);
   }
 }
 
+/**
+ * @param {Reminder} reminder 
+ * @param {Discord.Client} client 
+ */
 export function startReminder(reminder: Reminder, client: Discord.Client): void {
   setInterval(() => reminder.queueChecker(client), 1000);
 }
