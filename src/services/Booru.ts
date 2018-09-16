@@ -90,7 +90,6 @@ export class Booru {
    */
   public getDanbooru(message: DISCORD.Message, cmds: string[]) {
     this.Logger.setMethod('getDanbooru');
-
     let tagList = this.cleanGet(cmds);
     if (prevImgId != null) {
         tagList += '+-id:' + prevImgId;

@@ -47,21 +47,23 @@ FUBUKI.on('message', (message) => {
   Logger.setMethod('on message');
 
   if (message !== undefined && message.content !== undefined && message.content.charAt(0) === '!') {
-    let cmds = message.content.toLowerCase().split(' ');
+    const cmds = message.content.toLowerCase().split(' ');
 
     pTimeout(features(message, cmds), MAXTIMEOUT)
-      .catch ((err) => Logger.error(err, 'features()'));
+      .catch((err) => Logger.error(err, 'features()'));
   }
 });
 
 /**
  * @param {DISCORD.Message} message A message object as defined in discord.js
  * @param {string[]} commands The string containing a request to Fubuki
+ * @return {Promise<void>}
  */
-async function features(message: DISCORD.Message, commands: string[]) {
+function features(message: DISCORD.Message, commands: string[]): Promise<void> {
   Logger.setMethod('features');
+  
   try {
-    switch (commands[0]) {
+   switch (commands[0]) {
       case '!ping':
         message.channel.send('pong')
           .then(() => Logger.verbose('ping', commands.join(' ')))
@@ -98,6 +100,10 @@ async function features(message: DISCORD.Message, commands: string[]) {
         Danbooru.getDanbooru(message, newCmd);
         message.delete()
           .catch((reason) => Logger.info(reason, 'Delete booru-safe message'));
+        break;
+
+      case '!delete':
+        Danbooru.deleteBooru(message);
         break;
 
       case '!remindme':
@@ -189,10 +195,6 @@ async function features(message: DISCORD.Message, commands: string[]) {
         }
         break;
 
-      case '!delete':
-        Danbooru.deleteBooru(message);
-        break;
-
       case '!choose':
         Misc.choose(message);
         break;
@@ -221,8 +223,11 @@ async function features(message: DISCORD.Message, commands: string[]) {
 
       default:
     }
+
+    return new Promise((resolve, reject) => resolve());
   } catch (err) {
     Logger.warn(err, 'Command processing failed');
+    return new Promise((resolve, reject) => reject(err));
   }
 };
 
