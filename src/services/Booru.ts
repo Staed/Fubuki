@@ -46,7 +46,7 @@ export class Booru {
    * @param {string} imgUrl - The complete URL to the desired image link
    */
   private sendGoogleShortenerRequest(message: DISCORD.Message, text: string, imgUrl: string) {
-    this.Logger.setMethod('sendGoogleShortenerRequest');
+    this.Logger.setMethod(this.sendGoogleShortenerRequest.name);
 
     let options: request.Options = {
       method: 'POST',
@@ -89,7 +89,7 @@ export class Booru {
    * @param {string[]} cmds
    */
   public getDanbooru(message: DISCORD.Message, cmds: string[]) {
-    this.Logger.setMethod('getDanbooru');
+    this.Logger.setMethod(this.getDanbooru.name);
     let tagList = this.cleanGet(cmds);
     if (prevImgId != null) {
         tagList += '+-id:' + prevImgId;

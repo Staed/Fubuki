@@ -18,7 +18,7 @@ export default class MusicPlayer {
    * @return {Promise<Discord.VoiceConnection>}
    */
   public connect(guild: Discord.Guild): Promise<Discord.VoiceConnection> {
-    this.Logger.setMethod('connect');
+    this.Logger.setMethod(this.connect.name);
 
     try {
       let sb = '';
@@ -49,7 +49,7 @@ export default class MusicPlayer {
    * @param {Discord.Guild} guild - The guild that the command orignated from
    */
   public disconnect(guild: Discord.Guild): void {
-    this.Logger.setMethod('disconnect');
+    this.Logger.setMethod(this.disconnect.name);
 
     if (guild.voiceConnection !== null) {
       guild.voiceConnection.channel.leave();
@@ -96,7 +96,7 @@ export default class MusicPlayer {
    * @param {Discord.Message} message - A message object as defined in discord.js
    */
   private playQueued(nextVid: string, message: Discord.Message) {
-    this.Logger.setMethod('playQueued');
+    this.Logger.setMethod(this.playQueued.name);
 
     const STREAMOPTIONS = {seek: 0, volume: 1};
 
@@ -164,7 +164,7 @@ export default class MusicPlayer {
    * @param {Discord.Message} message - A message object as defined in discord.js
    */
   private playNext(message: Discord.Message): void {
-    this.Logger.setMethod('playNext');
+    this.Logger.setMethod(this.playNext.name);
     this.playlistQueue.pop();
     if (this.playlistQueue.size() > 0) {
       this.Logger.verbose('playing', 'Now Playing: ' + this.playlistQueue[0].replace(this.youtubeHeader, ''));
@@ -176,7 +176,7 @@ export default class MusicPlayer {
    * @param {Discord.Message} message
    */
   public skip(message: Discord.Message): void {
-    this.Logger.setMethod('skip');
+    this.Logger.setMethod(this.skip.name);
 
     this.Logger.verbose('skip', this.playlistQueue.front().replace(this.youtubeHeader, '') + ' skipped');
     message.channel.send('Skipping song.')
@@ -188,7 +188,7 @@ export default class MusicPlayer {
    * @param {Discord.Message} message
    */
   public repeat(message: Discord.Message): void {
-    this.Logger.setMethod('repeat');
+    this.Logger.setMethod(this.repeat.name);
 
     message.content = '!play ' + this.lastPlayed;
     if (this.playlistQueue.size() === 0) {
@@ -212,7 +212,7 @@ export default class MusicPlayer {
    * @param {Discord.TextChannel} channel - The channel from which the message orignated
    */
   public nowPlaying(channel: Discord.TextChannel): void {
-    this.Logger.setMethod('nowPlaying');
+    this.Logger.setMethod(this.nowPlaying.name);
 
     if (this.playlistQueue.size() === 0) {
       channel.send('Nothing is being played but my heart.')
@@ -234,7 +234,7 @@ export default class MusicPlayer {
    * @param {Discord.Message} message
    */
   public radio(message: Discord.Message): void {
-    this.Logger.setMethod('radio');
+    this.Logger.setMethod(this.radio.name);
 
     let url = message.content.split(' ')[1];
     let startLen = 0;

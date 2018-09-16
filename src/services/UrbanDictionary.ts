@@ -12,7 +12,7 @@ export default class UrbanDictionary {
      *  @param {string[]} cmds
      */
     public getDefinition(message: Discord.Message, cmds: string[]) {
-        this.Logger.setMethod('getDefinition');
+        this.Logger.setMethod(this.getDefinition.name);
 
         const term = cmds.slice(1).join('+');
 

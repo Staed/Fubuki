@@ -60,7 +60,7 @@ FUBUKI.on('message', (message) => {
  * @return {Promise<void>}
  */
 function features(message: DISCORD.Message, commands: string[]): Promise<void> {
-  Logger.setMethod('features');
+  Logger.setMethod(features.name);
   
   try {
    switch (commands[0]) {

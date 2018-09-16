@@ -43,7 +43,7 @@ export default class Finance {
    * @param {string} company - Ticker symbol for a company on the stock market
    */
   private getYahoo(message: DISCORD.Message, company: string) {
-    this.Logger.setMethod('getYahoo');
+    this.Logger.setMethod(this.getYahoo.name);
 
     yahooFinance.quote({
       symbol: company,
@@ -101,7 +101,7 @@ export default class Finance {
    * @param {string} company - Ticker symbol for a company on the stock market
    */
   private getGoogle(message: DISCORD.Message, company: string) {
-    this.Logger.setMethod('getGoogle');
+    this.Logger.setMethod(this.getGoogle.name);
 
     let options =
       this.Misc.getOptions(config.google_path, config.google_finance, company);
@@ -185,7 +185,7 @@ export default class Finance {
    * @param {string} company - Ticker symbol for a company on the stock market
    */
   private getBloomberg(message: DISCORD.Message, company: string) {
-    this.Logger.setMethod('getBloomberg');
+    this.Logger.setMethod(this.getBloomberg.name);
 
     if (company == undefined) {
       this.Logger.warn('undefined', 'No ticker specified');

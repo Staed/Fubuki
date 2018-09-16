@@ -63,7 +63,7 @@ export default class Misc {
    * @return {request.Options} - The options used in sending a Request
    */
   public getOptions(hostname: string, path: string, tags: string): request.Options {
-    this.Logger.setMethod('getOptions'); 
+    this.Logger.setMethod(this.getOptions.name); 
     this.Logger.verbose('request', 'Received request for: ' + path + tags);
     
     // Do NOT use qs: { ... }, it replaces '+' with '%20'
@@ -109,7 +109,7 @@ export default class Misc {
   * @param {Discord.Message} message - A message object as defined in discord.js
   */
   public coinFlip(message: Discord.Message) {
-    this.Logger.setMethod('coinFlip');
+    this.Logger.setMethod(this.coinFlip.name);
 
     let coin: string;
     const flip = Math.floor(Math.random() * 100 + 1);
@@ -136,7 +136,7 @@ export default class Misc {
     * maybe tied to stocks or time
     */
   public rate(message: Discord.Message, cmds: string[]) {
-    this.Logger.setMethod('rate');
+    this.Logger.setMethod(this.rate.name);
 
     const str = message.content.split(' ').slice(1).join(' ');
     const rating = this.rateAlgorithm(str);
@@ -168,7 +168,7 @@ export default class Misc {
    * @param {Discord.Message} message - A message object as defined by discord.js
    */
   public choose(message: Discord.Message) {
-    this.Logger.setMethod('choose');
+    this.Logger.setMethod(this.choose.name);
 
     // Weighted Choosing (#1#)
     // Defaults to 1 per choice
@@ -205,7 +205,7 @@ export default class Misc {
    * @param {Discord.Message} message - A message object as defined by discord.js
    */
   public roll(message: Discord.Message) {
-    this.Logger.setMethod('roll');
+    this.Logger.setMethod(this.roll.name);
 
     let rollInfo = message.content.replace('!roll ', '');
 
