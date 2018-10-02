@@ -242,5 +242,10 @@ FUBUKI.on('disconnected', () => {
   process.exit(1);
 });
 
+FUBUKI.on('error', (ex) => {
+  Logger.setMethod('on error');
+  Logger.error(ex, 'Client Error');
+})
+
 pTimeout(FUBUKI.login(config.discord_token), MAXTIMEOUT)
   .catch((err) => console.log(err));
