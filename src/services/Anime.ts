@@ -3,6 +3,8 @@ import * as Discord from 'discord.js';
 
 import config from '../config';
 import LOGGER from '../util/Logger';
+import Instruction from '../model/Instruction';
+import { resolve } from 'dns';
 
 export default class Anime {
   private Logger = new LOGGER('Anime');
@@ -15,48 +17,54 @@ export default class Anime {
    * @param {Discord.Message} message A message object as defined in discord.js
    * @param {string} title The title of the specific show wanted, or null.
    */
-  private aniListQuery(queryType: string, message: Discord.Message, title: string) {
-    const func = 'aniListQuery';
+  private aniListQuery(queryType: string, title: string): Promise<Instruction> {
+    this.Logger.setMethod(this.aniListQuery.name);
     
-    if (this.aniListToken != null && this.aniListToken.expires > (Date.now()/1000 - 60)) {
-      if ('airing' == queryType.toLowerCase()) {
-        this.aniListAiring(message);
-      } else if ('specific' == queryType.toLowerCase()) {
-        this.aniListSpecific(message, title);
-      } else {
-        this.Logger.verbose('invalid', 'Invalid queryType in aniListQuery with token');
-        return;
-      }
-    }
-
-    let authUri = config.anilist_path + 'auth/access_token?' + config.anilist_grant + '&' + config.anilist_id + '&' + config.anilist_secret;
-
-    let authOptions: request.Options = {
-      method: 'POST',
-      uri: authUri,
-      json: true,
-    } as request.Options;
-    
-    request(authOptions)
-      .then((body) => {
-        this.aniListToken = {'access_token': body.access_token, 'expires': body.expires};
-    
+    return new Promise((resolve, reject) => {
+      if (this.aniListToken != null && this.aniListToken.expires > (Date.now()/1000 - 60)) {
         if ('airing' == queryType.toLowerCase()) {
-          this.aniListAiring(message);
+          resolve(this.aniListAiring());
         } else if ('specific' == queryType.toLowerCase()) {
-          this.aniListSpecific(message, title);
+          resolve(this.aniListSpecific(title));
         } else {
-          this.Logger.verbose('invalid', 'Invalid queryType in aniListQuery without token');
+          this.Logger.verbose('invalid', 'Invalid queryType in aniListQuery with token');
+          reject(null);
         }
-      })
-      .catch((reason) => this.Logger.info(reason, 'Reject message'));
+      }
+  
+      let authUri = config.anilist_path + 'auth/access_token?' + config.anilist_grant + '&' + config.anilist_id + '&' + config.anilist_secret;
+  
+      let authOptions: request.Options = {
+        method: 'POST',
+        uri: authUri,
+        json: true,
+      } as request.Options;
+      
+      request(authOptions)
+        .then((body) => {
+          this.aniListToken = {'access_token': body.access_token, 'expires': body.expires};
+      
+          if ('airing' == queryType.toLowerCase()) {
+            resolve(this.aniListAiring());
+          } else if ('specific' == queryType.toLowerCase()) {
+            resolve(this.aniListSpecific(title));
+          } else {
+            this.Logger.verbose('invalid', 'Invalid queryType in aniListQuery without token');
+            reject(null);
+          }
+        })
+        .catch((reason) => {
+          this.Logger.info(reason, 'Reject message');
+          reject(null);
+        });
+    });
   }
   
   /**
    * @param {Discord.Message} message A message object as defined in discord.js
    */
-  private aniListAiring(message: Discord.Message) {
-    const func = 'aniListAiring';
+  private aniListAiring(): Promise<Instruction> {
+    this.Logger.setMethod(this.aniListAiring.name);
   
     let tdy = new Date();
     let mth = tdy.getMonth();
@@ -77,44 +85,47 @@ export default class Anime {
       json: true,
     } as request.Options;
   
-    request(airingOptions)
-      .then((body) => {
-        let resultString = [];
-        let resultArray = body;
-  
-        let ct = 1;
-        for (let element of resultArray) {
-          if (!element.genres.includes('Hentai') &&
-              resultString.toString().length < 2000) {
-            resultString.push('**' + ct + '.** ' + element.title_english);
-            ct += 1;
+    return new Promise((resolve, reject) => {
+      request(airingOptions)
+        .then((body) => {
+          let resultString = [];
+          let resultArray = body;
+    
+          let ct = 1;
+          for (let element of resultArray) {
+            if (!element.genres.includes('Hentai') &&
+                resultString.toString().length < 2000) {
+              resultString.push('**' + ct + '.** ' + element.title_english);
+              ct += 1;
+            }
           }
-        }
-        if (resultString.toString().length > 2000) {
-          resultString.pop();
-          message.channel.send('Search results truncated due to length...')
-            .catch((reason) => this.Logger.verbose('', 'Truncated season search results'));
-        }
-  
-        message.channel.send(resultString)
-          .catch((reason) => this.Logger.info(reason, 'Reject message'));
-      })
-      .catch((reason) => this.Logger.info(reason, 'Reject request message'));
+          if (resultString.toString().length > 2000) {
+            resultString.pop();
+            resolve(new Instruction('season', 'Search results truncated due to length...'));
+          }
+    
+          resolve(new Instruction('season', resultString.join('\n')));
+        })
+        .catch((reason) => {
+          this.Logger.info(reason, 'Reject request message')
+          reject(null);
+        });
+    });
   }
   
   /**
    * @param {Discord.Message} message A message object as defined in discord.js
    */
-  public season(message: Discord.Message) {
-    this.aniListQuery('Airing', message, null);
+  public season(): Promise<Instruction> {
+    return this.aniListQuery('airing', null);
   }
   
   /**
    * @param {Discord.Message} message A message object as defined in discord.js
    * @param {string} title A string containing the title of the show
    */
-  private aniListSpecific(message: Discord.Message, title: string) {
-    const func = 'aniListSpecific';
+  private aniListSpecific(title: string): Promise<Instruction> {
+    this.Logger.setMethod(this.aniListSpecific.name);
   
     let queryUri = config.anilist_path + 'anime/search/' + title + '?access_token=' + this.aniListToken.access_token;
   
@@ -124,12 +135,11 @@ export default class Anime {
       json: true,
     } as request.Options;
   
-    request(queryOptions)
+    return new Promise((resolve, reject) => {
+      request(queryOptions)
       .then((body) => {
         if (body == null || body == '') {
-          message.channel.send('I couldn\'t find that anime.')
-            .catch((reason) => this.Logger.info(reason, 'Reject message'));
-          return;
+          resolve(new Instruction('anime', 'I couldn\'t find that anime.'));
         }
         
         let text = '';
@@ -137,7 +147,7 @@ export default class Anime {
     
         text += '**' + showInfo.title_english + '**';
         text += '\n**Status:** ' + showInfo.airing_status;
-        text += '\n**Description:** ' + showInfo.description.replace('<br>', ' ');
+        text += '\n**Description:** ' + showInfo.description.replace(/<br>/g, '\n').replace(/(\n)+/g, '\n');
     
         let startTime = String(showInfo.start_date_fuzzy);
         let date = parseInt(startTime.substring(6, ));
@@ -147,19 +157,21 @@ export default class Anime {
         let timeOptions = {month: 'long', day: 'numeric', year: 'numeric'};
         text += '\n**Starting around:** ';
         text += timeString.toLocaleDateString('en-US', timeOptions);
-        text += '\n*' + showInfo.image_url_lge + '*';
+        text += '\n' + showInfo.image_url_lge;
     
-        message.channel.send(text)
-          .catch((reason) => this.Logger.info(reason, 'Reject send message'));
+        resolve(new Instruction('anime', text));
       })
-      .catch((reason) => this.Logger.info(reason, 'Reject request message'));
+      .catch((reason) => {
+        this.Logger.info(reason, 'Reject request message');
+        reject(null);
+      });
+    });
   }
 
   /**
    * @param {Discord.Message} message A message object as defined in discord.js
    */
-  public aninfo(message: Discord.Message) {
-      const title = message.content.replace('!aninfo ', '');
-      this.aniListQuery('Specific', message, title);
+  public aninfo(title: string): Promise<Instruction> {
+      return this.aniListQuery('specific', title);
   }
 }

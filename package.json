@@ -39,7 +39,6 @@
     "winston": "^3.0.0",
     "winston-daily-rotate-file": "^3.3.2",
     "yahoo-finance": ">=0.3.2",
-    "yo": "^2.0.0",
     "ytdl-core": "^0.25.1"
   },
   "devDependencies": {

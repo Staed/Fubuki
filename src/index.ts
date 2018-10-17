@@ -218,11 +218,11 @@ async function features(message: DISCORD.Message, commands: string[]): Promise<v
         break;
 
       case '!season':
-        Anime.season(message);
+        instruction = await Anime.season();
         break;
 
-      case '!aninfo':
-        Anime.aninfo(message);
+      case '!anime':
+        instruction = await Anime.aninfo(message.content.replace('!anime ', ''));
         break;
 
       case '!help':
