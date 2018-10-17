@@ -25,7 +25,6 @@
     "url": "git+https://github.com/Staed/Fubuki.git"
   },
   "dependencies": {
-    "bluebird": "3.x",
     "cheerio": "*",
     "discord.js": "11.x",
     "elastic-builder": "^2.0.2",

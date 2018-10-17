@@ -13,6 +13,8 @@ import FINANCE from './services/Finance';
 
 import URBAN from './services/UrbanDictionary';
 import ANIME from './services/Anime';
+import Instruction from './model/Instruction';
+import DiscordMessage from './model/DiscordMessage';
 
 const MAXTIMEOUT = config.MAXTIMEOUT;
 
@@ -59,8 +61,10 @@ FUBUKI.on('message', (message) => {
  * @param {string[]} commands The string containing a request to Fubuki
  * @return {Promise<void>}
  */
-function features(message: DISCORD.Message, commands: string[]): Promise<void> {
+async function features(message: DISCORD.Message, commands: string[]): Promise<void> {
   Logger.setMethod(features.name);
+
+  let instruction: Instruction;
   
   try {
    switch (commands[0]) {
@@ -83,13 +87,13 @@ function features(message: DISCORD.Message, commands: string[]): Promise<void> {
         break;
 
       case '!booru':
-        Danbooru.getDanbooru(message, commands);
+        instruction = await Danbooru.getDanbooru(commands);
         message.delete()
           .catch((reason) => Logger.info(reason, 'Delete booru message'));
         break;
 
       case '!b':
-        Danbooru.getDanbooru(message, commands);
+        instruction = await Danbooru.getDanbooru(commands);
         message.delete()
           .catch((reason) => Logger.info(reason, 'Delete booru alias message'));
         break;
@@ -97,13 +101,23 @@ function features(message: DISCORD.Message, commands: string[]): Promise<void> {
       case '!bsafe':
         let newCmd = commands;
         newCmd.push('rating:safe');
-        Danbooru.getDanbooru(message, newCmd);
+        instruction = await Danbooru.getDanbooru(newCmd);
         message.delete()
           .catch((reason) => Logger.info(reason, 'Delete booru-safe message'));
         break;
 
       case '!delete':
-        Danbooru.deleteBooru(message);
+        let msgs = await packageMessages(message);
+        let messageID = await Danbooru.deleteBooru(msgs);
+
+        message.channel.fetchMessage(messageID)
+          .then(msg => {
+            if (msg != null) {
+              msg.delete();
+              Logger.info('delete', 'Delete Message #' + messageID + ' containing Booru Image')
+            }
+          })
+          .catch((reason) => Logger.error(reason, 'Delete Message #' + messageID + ' containing Booru Image'));
         break;
 
       case '!remindme':
@@ -223,13 +237,37 @@ function features(message: DISCORD.Message, commands: string[]): Promise<void> {
 
       default:
     }
+    if (instruction !== undefined && instruction.reply !== undefined)
+      message.channel.send(instruction.reply);
 
-    return new Promise((resolve, reject) => resolve());
   } catch (err) {
     Logger.warn(err, 'Command processing failed');
-    return new Promise((resolve, reject) => reject(err));
   }
 };
+
+function packageMessages(message: DISCORD.Message): Promise<DiscordMessage[]> {
+  let msgs: DiscordMessage[] = [];
+
+  return new Promise((resolve, reject) => {
+    message.channel.fetchMessages({limit: 100})
+    .then(messages => {
+      for (message of messages.values()) {
+        msgs.push({
+          messageID: message.id,
+          authorID: message.author.id,
+          content: message.content,
+          guildID: message.guild.id,
+          createdTimestamp: message.createdTimestamp
+        } as DiscordMessage);
+      }
+
+      resolve(msgs);
+    })
+    .catch(err => {
+      reject(msgs);
+    })
+  });
+}
 
 FUBUKI.on('guildMemberAdd', async (member) => {
   Quote.addUser(member.displayName, member.id);

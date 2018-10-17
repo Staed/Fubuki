@@ -4,6 +4,8 @@ import * as request from 'request-promise';
 import LOGGER from '../util/Logger';
 import MISC from '../util/Misc';
 import config from '../config';
+import Instruction from '../model/Instruction';
+import DiscordMessage from '../model/DiscordMessage';
 
 let prevImgId = null;
 
@@ -18,6 +20,8 @@ export class Booru {
   private danbooruAuth: string;
   private danbooruUrl: string;
   private danbooruPath: string;
+
+  private static endpoint: string = 'booru';
 
   constructor(builder: BooruBuilder) {
     this.useShortener = builder.getUseShortener;
@@ -41,11 +45,10 @@ export class Booru {
   }
 
   /**
-   * @param {DISCORD.Message} message - A message object as defined in discord.js
    * @param {string} text - The text portion of the reply
    * @param {string} imgUrl - The complete URL to the desired image link
    */
-  private sendGoogleShortenerRequest(message: DISCORD.Message, text: string, imgUrl: string) {
+  private sendGoogleShortenerRequest(text: string, imgUrl: string): Promise<Instruction> {
     this.Logger.setMethod(this.sendGoogleShortenerRequest.name);
 
     let options: request.Options = {
@@ -60,36 +63,31 @@ export class Booru {
       json: true,
     };
 
-    request(options)
+    return new Promise((resolve, reject) => {
+      request(options)
       .then( (body) => {
         if (body.id != null) {
           this.Logger.verbose('shorten', 'Shortened url to ' + body.id);
-          message.channel.send(text + body.id)
-            .catch( (reason) => {
-              this.Logger.info(reason, 'Short URL message');
-            });
+          resolve(new Instruction(Booru.endpoint, text + body.id));
         } else {
-          message.channel.send(text + imgUrl)
-            .catch( (reason) => {
-              this.Logger.info(reason, 'Full URL message');
-            });
+          resolve(new Instruction(Booru.endpoint, text + imgUrl));
         }
       })
       .catch( (err) => {
         this.Logger.warn(err, 'Unable to shorten url, returning long form');
-        message.channel.send(text + imgUrl)
-          .catch( (reason) => {
-            this.Logger.info(reason, 'URL message');
-        });
+        reject(new Instruction(Booru.endpoint, text + imgUrl));
       });
+    });
+    
   }
 
   /**
    * @param {DISCORD.Message} message - A message object as defined in discord.js
    * @param {string[]} cmds
    */
-  public getDanbooru(message: DISCORD.Message, cmds: string[]) {
+  public getDanbooru(cmds: string[]): Promise<Instruction> {
     this.Logger.setMethod(this.getDanbooru.name);
+
     let tagList = this.cleanGet(cmds);
     if (prevImgId != null) {
         tagList += '+-id:' + prevImgId;
@@ -97,7 +95,8 @@ export class Booru {
     let options =
         this.Misc.getOptions(this.danbooruAuth, this.danbooruPath, tagList);
 
-    request(options)
+    return new Promise((resolve, reject) => {
+      request(options)
       .then( (body) => {
         let selectedIdx = Math.floor(Math.random() * (body.length));
         let tagStr = '**Tags:** ' + this.cleanGet(cmds).split('+').join(', ');
@@ -109,59 +108,39 @@ export class Booru {
             imgUrl = this.danbooruUrl + imgUrl;
           }
           prevImgId = body[selectedIdx].id;
+          resolve(new Instruction(Booru.endpoint, tagStr + '\n' + imgUrl))
         } else {
-          message.channel.send('No picture found')
-            .catch( (reason) => {
-              this.Logger.info(reason, 'Reject no picture');
-            });
           this.Logger.warn('NullPointer', 'Received a null pointer instead of array at index ' + selectedIdx + ' on ' + JSON.stringify(body));
-          return;
+          resolve(new Instruction(Booru.endpoint, 'No picture found'));
         }
 
         if (this.useShortener) {
           let text = decodeURIComponent(tagStr) + '\n';
-          this.sendGoogleShortenerRequest(message, text, imgUrl);
+          resolve(this.sendGoogleShortenerRequest(text, imgUrl));
         } else {
-          message.channel.send(decodeURIComponent(tagStr) + '\n' + imgUrl)
-            .catch( (reason) => {
-              this.Logger.info(reason, 'Reject booru URL');
-            });
+          resolve(new Instruction(Booru.endpoint, decodeURIComponent(tagStr) + '\n' + imgUrl));
         }
     })
     .catch( (err) => {
-      return console.error('Request Failed: ' + err);
-      message.channel.send('Request Failed. Try again.')
-        .catch( (reason) => {
-          this.Logger.info(reason, 'Reject request fail');
-        });
+      console.error('Request Failed: ' + err);
+      reject(new Instruction(Booru.endpoint, 'Request Failed. Try again.'));
+    });
     });
   }
 
   /**
    * @param {DISCORD.Message} message - A message object as defined in discord.js
    */
-  public deleteBooru(message: DISCORD.Message) {
-    const func = 'deleteBooru';
+  public deleteBooru(messages: DiscordMessage[]): string {
+    this.Logger.setMethod(this.deleteBooru.name);
 
-    message.channel.fetchMessages({limit: 100})
-      .then((msgs) => {
-        for (let [, value] of msgs.entries()) {
-          if (value.author.id == config.id && /\*\*Tags:\*\* .*\nhttps:.*/.test(value.content) == true) {
-            value.delete()
-              .catch((reason) => this.Logger.info(reason, 'Reject delete'));
-            this.Logger.verbose('', 'Deleted ' + value.content.replace('\n', '\t'));
-            return;
-          }
-        }
+    for (let message of messages) {
+      if (message.authorID == config.id && /\*\*Tags:\*\* .*\nhttps:.*/.test(message.content) == true) {
+        return message.messageID;
+      }
+    }
 
-        message.channel.send('No booru post to delete in the last 100 messages!')
-          .catch((reason) => this.Logger.info(reason, 'Reject delete exhaust'));
-      })
-      .catch((err) => {
-        message.channel.send('Failed to fetch past messages')
-          .catch( (reason) => this.Logger.info(reason, 'Reject delete not found'));
-        this.Logger.warn('err', 'No messages found');
-      });
+    return null;
   }
 }
 
