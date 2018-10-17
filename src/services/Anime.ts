@@ -4,7 +4,6 @@ import * as Discord from 'discord.js';
 import config from '../config';
 import LOGGER from '../util/Logger';
 import Instruction from '../model/Instruction';
-import { resolve } from 'dns';
 
 export default class Anime {
   private Logger = new LOGGER('Anime');
