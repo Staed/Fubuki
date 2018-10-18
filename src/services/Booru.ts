@@ -1,4 +1,3 @@
-import * as DISCORD from 'discord.js';
 import * as request from 'request-promise';
 
 import LOGGER from '../util/Logger';

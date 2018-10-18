@@ -1,5 +1,4 @@
 import * as request from 'request-promise';
-import * as Discord from 'discord.js';
 
 import config from '../config';
 import LOGGER from '../util/Logger';

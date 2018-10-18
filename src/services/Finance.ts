@@ -1,11 +1,11 @@
 import * as request from 'request-promise';
 import * as cheerio from 'cheerio';
 import * as yahooFinance from 'yahoo-finance';
-import * as DISCORD from 'discord.js';
 
 import config from '../config';
 import LOGGER from '../util/Logger';
 import MISC from '../util/Misc';
+import Instruction from '../model/Instruction';
 
 export default class Finance {
   private Logger = new LOGGER('Finance');
@@ -16,25 +16,18 @@ export default class Finance {
    * @param {string} apiName - Name of the stock API to use
    * @param {string} company - Ticker symbol for a company on the stock market
    */
-  public getStock(message: DISCORD.Message, apiName: string, company: string) {
-    const func = 'getStock';
+  public getStock(apiName: string, company: string): Promise<Instruction> {
+    this.Logger.setMethod(this.getStock.name);
 
     switch (apiName) {
       case 'bloomberg':
-        this.getBloomberg(message, company);
-        break;
+        return this.getBloomberg(company);
       case 'yahoo':
-        this.getYahoo(message, company);
-        break;
+        return this.getYahoo(company);
       case 'google':
-        this.getGoogle(message, company);
-        break;
+        return this.getGoogle(company);
       default:
-        message.channel.send('Only \"bloomberg\", \"yahoo\", \"google\" ' +
-          'API calls are accepted right now')
-          .catch((reason) => {
-            this.Logger.info(reason, 'Invalid stock API message');
-          });
+        return new Promise((resolve, _) => resolve(new Instruction('stock', 'Only \"bloomberg\", \"yahoo\", \"google\" API calls are accepted right now')));
     }
   }
 
@@ -42,57 +35,52 @@ export default class Finance {
    * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
-  private getYahoo(message: DISCORD.Message, company: string) {
+  private getYahoo(company: string): Promise<Instruction> {
     this.Logger.setMethod(this.getYahoo.name);
 
-    yahooFinance.quote({
-      symbol: company,
-      modules: ['price', 'summaryDetail',
-        'summaryProfile', 'defaultKeyStatistics'],
-    }, (err, quotes) => {
-      let detail = quotes.summaryDetail;
-      let stats = quotes.defaultKeyStatistics;
+    return new Promise((resolve, reject) => {
+      yahooFinance.quote({
+        symbol: company,
+        modules: ['price', 'summaryDetail',
+          'summaryProfile', 'defaultKeyStatistics'],
+      }, (err, quotes) => {
+        let detail = quotes.summaryDetail;
+        let stats = quotes.defaultKeyStatistics;
 
-      let header = quotes.price.longName;
-      if (header == undefined) {
-        header = quotes.price.shortName;
-        header = header.replace(/,.*/, '').trim();
-      }
+        let header = quotes.price.longName;
+        if (header == undefined) {
+          header = quotes.price.shortName;
+          header = header.replace(/,.*/, '').trim();
+        }
 
-      if (stats == undefined) {
-        stats = {trailingEps: ' - '};
-      }
+        if (stats == undefined) {
+          stats = {trailingEps: ' - '};
+        }
 
-      let data = [
-        ['Previous Close', detail.previousClose,
-          'Market Cap', detail.marketCap],
-        ['Open', detail.open, 'Beta', detail.beta],
-        ['Bid', detail.bid, 'PE Ratio (TTM)', detail.trailingPE],
-        ['Ask', detail.ask, 'EPS (TTM)', stats.trailingEps],
-        ['Day\'s Range',
-          detail.regularMarketDayLow + ' - ' + detail.regularMarketDayHigh,
-          '52 Week Range',
-          detail.fiftyTwoWeekLow + ' - ' + detail.fiftyTwoWeekHigh],
-        ['Volume', detail.volume, 'Avg. Volume', detail.averageVolume],
-      ];
+        let data = [
+          ['Previous Close', detail.previousClose,
+            'Market Cap', detail.marketCap],
+          ['Open', detail.open, 'Beta', detail.beta],
+          ['Bid', detail.bid, 'PE Ratio (TTM)', detail.trailingPE],
+          ['Ask', detail.ask, 'EPS (TTM)', stats.trailingEps],
+          ['Day\'s Range',
+            detail.regularMarketDayLow + ' - ' + detail.regularMarketDayHigh,
+            '52 Week Range',
+            detail.fiftyTwoWeekLow + ' - ' + detail.fiftyTwoWeekHigh],
+          ['Volume', detail.volume, 'Avg. Volume', detail.averageVolume],
+        ];
 
-      let output = '```';
-      for (let i = 0; i < data.length; i++) {
-        output += MISC.padRight(data[i][0].toString(), 15) + ' ';
-        output += MISC.padRight(data[i][1].toString(), 25) + ' ';
-        output += MISC.padRight(data[i][2].toString(), 15) + ' ';
-        output += data[i][3] + '\n';
-      }
-      output += '```';
+        let output = '```';
+        for (let i = 0; i < data.length; i++) {
+          output += MISC.padRight(data[i][0].toString(), 15) + ' ';
+          output += MISC.padRight(data[i][1].toString(), 25) + ' ';
+          output += MISC.padRight(data[i][2].toString(), 15) + ' ';
+          output += data[i][3] + '\n';
+        }
+        output += '```';
 
-      message.channel.send('**' + header + ' (' + company.toUpperCase() + ')**')
-        .catch((reason) => {
-          this.Logger.info(reason, 'Stock header message');
-        });
-      message.channel.send(output)
-        .catch((reason) => {
-          this.Logger.info(reason, 'Stock information message');
-        });
+        resolve(new Instruction('stock', '**' + header + ' (' + company.toUpperCase() + ')**\n' + output));
+      });
     });
   }
 
@@ -100,13 +88,13 @@ export default class Finance {
    * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
-  private getGoogle(message: DISCORD.Message, company: string) {
+  private getGoogle(company: string): Promise<Instruction> {
     this.Logger.setMethod(this.getGoogle.name);
 
-    let options =
-      this.Misc.getOptions(config.google_path, config.google_finance, company);
+    let options = this.Misc.getOptions(config.google_path, config.google_finance, company);
 
-    request(options)
+    return new Promise((resolve, reject) => {
+      request(options)
       .then((body) => {
         const $ = cheerio.load(body);
 
@@ -116,10 +104,7 @@ export default class Finance {
 
         if (noTag.match(/no matches/)) {
           this.Logger.verbose('bad match', 'No such ticker name');
-          message.channel.send('I couldn\'t find a company with that ticker name')
-            .catch((reason) => {
-              this.Logger.info(reason, 'Company not found message');
-            });
+          resolve(new Instruction('stock', 'I couldn\'t find a company with that ticker name'));
           return;
         }
 
@@ -162,114 +147,82 @@ export default class Finance {
           'Received request for Google stock data of ' +
           company.toUpperCase() + ' aka ' + name);
 
-        message.channel.send(header)
-          .catch((reason) => {
-            this.Logger.info(reason, 'Stock header message');
-          });
-        message.channel.send(output)
-          .catch((reason) => {
-            this.Logger.info(reason, 'Stock information message');
-          });
+        resolve(new Instruction('stock', header + '\n' + output));
       })
       .catch((err) => {
         this.Logger.warn(err, 'Request stock failed');
-        message.channel.send('Query timed out')
-          .catch((reason) => {
-            this.Logger.info(reason, 'Query timed out message');
-          });
+        reject(new Instruction('stock', 'Query timed out'));
       });
+    });
   }
 
   /**
    * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string} company - Ticker symbol for a company on the stock market
    */
-  private getBloomberg(message: DISCORD.Message, company: string) {
+  private getBloomberg(company: string): Promise<Instruction> {
     this.Logger.setMethod(this.getBloomberg.name);
 
-    if (company == undefined) {
-      this.Logger.warn('undefined', 'No ticker specified');
-      message.channel.send('You need to specify the ticker symbol and ' +
-        'exchange of the company I\'m looking for!')
+    return new Promise((resolve, reject) => {
+      if (company == undefined) {
+        this.Logger.warn('undefined', 'No ticker specified');
+        resolve(new Instruction('stock', 'You need to specify the ticker symbol and exchange of the company I\'m looking for!'));
+      }
+  
+      let options =
+        this.Misc.getOptions(config.bloomberg_path, config.bloomberg_quote, company);
+  
+      request(options)
+        .then((body) => {
+          const $ = cheerio.load(body);
+  
+          let noTag = $('.container .premium__message').text().trim();
+          if (noTag.match(/The search for .*/)) {
+            this.Logger.warn('bad match', 'No such tag');
+            resolve(new Instruction('stock', 'I couldn\'t find a company with that ticker name and exchange'));
+          }
+  
+          let name = $('.basic-quote h1.name').text().trim();
+          let currency = $('.basic-quote .price-container .currency').text().trim();
+          let currentPrice = $('.basic-quote .price-container .price').text().trim();
+          let header = '**' + name + '**, currently at ' + currentPrice + ' ' + currency;
+  
+          let data = [];
+  
+          let table = $('.data-table_detailed');
+          table.find('.cell').each((i, cell) => {
+            let label = $(cell).find('.cell__label').text().trim();
+            let value = $(cell).find('.cell__value').text().trim();
+  
+            if (/Earnings per Share/.test(label)) {
+              label = 'EPS (USD) (TTM)';
+            }
+            if (/Shares Outstanding/.test(label)) {
+              label = 'Shares (m)';
+            }
+            if (/Current P\/E Ratio/.test(label)) {
+              label = 'PE Ratio (TTM)';
+            }
+  
+            data.push([label, value]);
+          });
+  
+          let output = '```';
+          for (let i = 0; i < data.length - 1; i += 2) {
+            output += MISC.padRight(data[i][0], 17) + ' ';
+            output += MISC.padRight(data[i][1], 20) + ' ';
+            output += MISC.padRight(data[i + 1][0], 20) + ' ';
+            output += data[i + 1][1] + '\n';
+          }
+          output += '```';
+  
+          this.Logger.verbose('request', 'Received request for Bloomberg stock data of ' + company.toUpperCase() + ' aka ' + name);
+          resolve(new Instruction('stock', header + '\n' + output));
+        })
         .catch((reason) => {
-          this.Logger.info(reason, 'Invalid company message');
+          this.Logger.info(reason, 'Request stock failed');
+          reject(new Instruction('stock', 'Query timed out'));
         });
-      return;
-    }
-
-    let options =
-      this.Misc.getOptions(config.bloomberg_path, config.bloomberg_quote, company);
-
-    request(options)
-      .then((body) => {
-        const $ = cheerio.load(body);
-
-        let noTag = $('.container .premium__message').text().trim();
-        if (noTag.match(/The search for .*/)) {
-          this.Logger.warn('bad match', 'No such tag');
-          message.channel.send('I couldn\'t find a company with that ' +
-            'ticker name and exchange')
-            .catch((reason) => {
-              this.Logger.info(reason, 'Company not found message');
-            });
-          return;
-        }
-
-        let name = $('.basic-quote h1.name').text().trim();
-        let currency =
-          $('.basic-quote .price-container .currency').text().trim();
-        let currentPrice =
-          $('.basic-quote .price-container .price').text().trim();
-        let header = '**' + name + '**, currently at ' +
-          currentPrice + ' ' + currency;
-
-        let data = [];
-
-        let table = $('.data-table_detailed');
-        table.find('.cell').each((i, cell) => {
-          let label = $(cell).find('.cell__label').text().trim();
-          let value = $(cell).find('.cell__value').text().trim();
-
-          if (/Earnings per Share/.test(label)) {
-            label = 'EPS (USD) (TTM)';
-          }
-          if (/Shares Outstanding/.test(label)) {
-            label = 'Shares (m)';
-          }
-          if (/Current P\/E Ratio/.test(label)) {
-            label = 'PE Ratio (TTM)';
-          }
-
-          data.push([label, value]);
-        });
-
-        let output = '```';
-        for (let i = 0; i < data.length - 1; i += 2) {
-          output += MISC.padRight(data[i][0], 17) + ' ';
-          output += MISC.padRight(data[i][1], 20) + ' ';
-          output += MISC.padRight(data[i + 1][0], 20) + ' ';
-          output += data[i + 1][1] + '\n';
-        }
-        output += '```';
-
-        this.Logger.verbose('request', 
-          'Received request for Bloomberg stock data of ' +
-          company.toUpperCase() + ' aka ' + name);
-        message.channel.send(header)
-          .catch((reason) => {
-            this.Logger.info(reason, 'Stock header message');
-          });
-        message.channel.send(output)
-          .catch((reason) => {
-            this.Logger.info(reason, 'Stock information message');
-          });
-      })
-      .catch((reason) => {
-        this.Logger.info(reason, 'Request stock failed');
-        message.channel.send('Query timed out')
-          .catch((reason) => {
-            this.Logger.info(reason, 'Query timed out message');
-          });
-      });
+    });
   }
 }

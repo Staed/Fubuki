@@ -205,7 +205,7 @@ async function features(message: DISCORD.Message, commands: string[]): Promise<v
           message.channel.send(badText)
             .catch((reason) => Logger.info(reason, 'Stock message'));
         } else {
-          Finance.getStock(message, commands[1], commands[2].toUpperCase());
+          instruction = await Finance.getStock(commands[1], commands[2].toUpperCase());
         }
         break;
 
