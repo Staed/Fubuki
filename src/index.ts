@@ -126,7 +126,9 @@ async function features(message: DISCORD.Message, commands: string[]): Promise<v
 
       case '!play':
         try{
-          MusicPlayer.play(message);
+          MusicPlayer.addToQueue(message.content.split(' ')[1]);
+          if (MusicPlayer.getQueueSize() === 1)
+            MusicPlayer.play(await MusicPlayer.connect(message.guild.channels), message.channel as DISCORD.TextChannel);
         } catch (err) { Logger.error(err, 'MusicPlayer Play') }
         message.delete()
           .then((msg: DISCORD.Message) => Logger.verbose('delete', 'Deleted !play message from ' + msg.author.username))
@@ -134,32 +136,30 @@ async function features(message: DISCORD.Message, commands: string[]): Promise<v
         break;
 
       case '!connect':
-        MusicPlayer.connect(message.guild);
+        MusicPlayer.connect(message.guild.channels);
         break;
 
       case '!disconnect':
-        MusicPlayer.disconnect(message.guild);
+        MusicPlayer.disconnect(message.guild.name, message.guild.voiceConnection);
         break;
 
       case '!skip':
-        MusicPlayer.skip(message);
+        instruction = MusicPlayer.skip();
         break;
 
       case '!repeat':
-        MusicPlayer.repeat(message);
+        instruction = MusicPlayer.repeat();
         break;
 
       case '!nowplaying':
-        MusicPlayer.nowPlaying(message.channel as DISCORD.TextChannel);
+        instruction = MusicPlayer.nowPlaying();
         break;
 
       case '!radio':
-        MusicPlayer.radio(message);
+        MusicPlayer.radio(message.content.split(' ')[1], await MusicPlayer.connect(message.guild.channels), message.channel as DISCORD.TextChannel);
         if (/youtube.com/.test(message.content)) {
           message.delete()
-            .then( (msg) => {
-              Logger.verbose('delete', 'Deleted !radio message from ' + msg.author);
-            })
+            .then((msg) => Logger.verbose('delete', 'Deleted !radio message from ' + msg.author))
             .catch((reason) => Logger.info(reason, 'Delete radio message'));
         }
         break;
@@ -237,7 +237,7 @@ async function features(message: DISCORD.Message, commands: string[]): Promise<v
 
       default:
     }
-    if (instruction !== undefined && instruction.reply !== undefined)
+    if (instruction !== undefined && instruction.reply !== undefined && instruction.reply.length > 0)
       message.channel.send(instruction.reply);
 
   } catch (err) {
