@@ -7,6 +7,8 @@ import LOGGER from '../util/Logger';
 import config from '../config';
 import MISC from '../util/Misc';
 
+import { isNullOrUndefined } from 'util';
+
 interface Entry {
   content: string
   guild: string
@@ -170,7 +172,10 @@ export default class Quote {
       const index = Math.floor(Math.random() * res.hits.hits.length);
 
       const entry: Entry = res.hits.hits[index]._source as Entry;
-      const quote: string = entry.content + '\n\tt. ' + message.guild.members.get(entry.user).nickname;
+      const member: Discord.GuildMember = message.guild.members.get(entry.user);
+      const name: string = isNullOrUndefined(member.nickname) ? member.user.username : member.nickname;
+
+      const quote: string = entry.content + '\n\tt. ' + name;
 
       message.channel.send(quote)
         .catch((err) => this.Logger.error(err, 'Search quote message'));
