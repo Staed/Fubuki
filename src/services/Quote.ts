@@ -257,7 +257,7 @@ export default class Quote {
   public memberQuoteTotal(message: Discord.Message) {
     this.Logger.setMethod(this.memberQuoteTotal.name);
 
-    let promises = [];
+    let promises: Array<Promise<void>> = new Array();
     let quoteCounts: Discord.Collection<string, Pair<string, number>> = new Discord.Collection();
 
     message.guild.members.map((member, memberId) => {
