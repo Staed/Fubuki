@@ -26,6 +26,19 @@ export default class Misc {
     }
     return text;
   }
+
+  /**
+   * @param {string} orig - The original string
+   * @param {number} targetLength - The string's  minimum length once padded
+   * @return {string} - The original string with the padding added
+   */
+  public static padLeft(orig: string, targetLength: number): string {
+    let text = orig;
+    while (text.length < targetLength) {
+      text = ' ' + text;
+    }
+    return text;
+  }
   
   /**
    * @param {Discord.Collection<Discord.Snowflake, Discord.GuildMember>} members

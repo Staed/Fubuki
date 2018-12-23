@@ -8,6 +8,8 @@ import config from '../config';
 import MISC from '../util/Misc';
 
 import { isNullOrUndefined } from 'util';
+import { Pair } from 'tstl';
+import Misc from '../util/Misc';
 
 interface Entry {
   content: string
@@ -230,6 +232,9 @@ export default class Quote {
         case 'list':
           this.listQuotes(message);
           break;
+        case 'ranking':
+          this.memberQuoteTotal(message);
+          break;
         default:
           this.searchQuote(message, capitalCmds);
       }
@@ -246,6 +251,42 @@ export default class Quote {
       },
       index: 'users',
       type: 'user',
+    });
+  }
+
+  public memberQuoteTotal(message: Discord.Message) {
+    this.Logger.setMethod(this.memberQuoteTotal.name);
+
+    let promises = [];
+    let quoteCounts: Discord.Collection<string, Pair<string, number>> = new Discord.Collection();
+
+    message.guild.members.map((member, memberId) => {
+      promises.push(
+        this.client.count({
+          index: 'messages',
+          body: esb.requestBodySearch().query(esb.matchQuery('user', memberId)).toJSON()
+        }).then((result) => {
+          let name = isNullOrUndefined(member.nickname) ? member.user.username : member.nickname;
+          this.Logger.info('Quote total', `Found ${result.count} results for ${name}`);
+          quoteCounts.set(memberId, new Pair(name, result.count));
+        })
+      );
+    });
+
+    Promise.all(promises).then(() => {
+      let result = '```';
+      let i = 1;
+      quoteCounts
+        .filter((pair) => pair.second > 0)
+        .sort((a,b) => a.second > b.second ? -1 : 1)
+        .forEach(pair => {
+          result += Misc.padRight(i + '. ' + pair.first, 40) + ' ' + pair.second.toString() + '\n';
+          i++;
+        });
+      result += '```';
+
+      message.channel.send(result)
+      .catch((err) => this.Logger.error(err, 'Quote count message'));
     });
   }
 }
