@@ -123,21 +123,21 @@ export default class Quote {
     this.Logger.setMethod(this.addUserQuote.name);
     const id = (this.Misc.matchMention(message.guild.members, capitalCmds.slice(2).join(' ')) as Discord.GuildMember).id;
 
-    let lastMessage;
+    let lastMessage: Discord.Message;
 
     message.channel.fetchMessages({limit: 100})
-      .then((messages) => {
-        for (let msg of messages.values()) {
-          if ((msg.author.id === id) && /!.*/i.test(msg.content) === false) {
+      .then((entries) => {
+        for (let msg of entries.values()) {
+          if ((msg.author.id === id) && /!.*/i.test(msg.content) === false 
+          && (isNullOrUndefined(lastMessage) || lastMessage.createdTimestamp.valueOf() < msg.createdTimestamp.valueOf())) {
             lastMessage = msg;
-            break;
           }
         }
 
         const entry: Entry = {
           content: lastMessage.content,
           guild: lastMessage.guild.id,
-          timestamp: lastMessage.createdTimestamp,
+          timestamp: lastMessage.createdAt,
           user: id,
         };
 
@@ -280,7 +280,7 @@ export default class Quote {
         .filter((pair) => pair.second > 0)
         .sort((a,b) => a.second > b.second ? -1 : 1)
         .forEach(pair => {
-          result += Misc.padRight(i + '. ' + pair.first, 40) + ' ' + pair.second.toString() + '\n';
+          result += `${i}. ${Misc.padLeft(`(${pair.second.toString()})`, 5)} ${pair.first}\n`;
           i++;
         });
       result += '```';
