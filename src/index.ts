@@ -189,7 +189,7 @@ async function features(message: DISCORD.Message, commands: string[]): Promise<v
         break;
 
       case '!quote':
-        if (commands[1] !== 'fubuki' && commands[2] !== 'fubuki') {
+        if (!containsFubuki(message.content.split(' '))) {
           Quote.quote(message, commands, message.content.split(' '));
         } else {
           message.channel.send('I\'m not going to quote myself!')
@@ -267,6 +267,14 @@ function packageMessages(message: DISCORD.Message): Promise<DiscordMessage[]> {
       reject(msgs);
     })
   });
+}
+
+function containsFubuki(cmds: string[]): boolean {
+  for (let cmd of cmds) {
+    if (cmd == FUBUKI.user.username || cmd == '<@' + FUBUKI.user.id + '>')
+      return true;
+  }
+  return false;
 }
 
 FUBUKI.on('guildMemberAdd', async (member) => {
