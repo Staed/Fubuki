@@ -14,7 +14,7 @@ import Misc from '../util/Misc';
 interface Entry {
   content: string
   guild: string
-  timestamp: Date
+  timestamp: number
   user: string
 }
 
@@ -137,7 +137,7 @@ export default class Quote {
         const entry: Entry = {
           content: lastMessage.content,
           guild: lastMessage.guild.id,
-          timestamp: lastMessage.createdAt,
+          timestamp: lastMessage.createdTimestamp,
           user: id,
         };
 

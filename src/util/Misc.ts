@@ -282,6 +282,10 @@ export default class Misc {
         .catch( (reason) => this.Logger.info(reason, 'Failed roll'));
     }
   }
+
+  public static escapeMarkdown(text: string): string {
+    return text.replace(/\\(\*|_|`|~|\\)/g, '$1').replace(/(\*|_|`|~|\\)/g, '\\$1'); // unescape then escape *, _, `, ~, \
+  }
 }
 
 
