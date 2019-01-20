@@ -235,6 +235,10 @@ export default class Quote {
         case 'ranking':
           this.memberQuoteTotal(message);
           break;
+        case 'me':
+          capitalCmds[1] = '<@' + message.author.id + '>';
+          this.searchQuote(message, capitalCmds);
+          break;
         default:
           this.searchQuote(message, capitalCmds);
       }
