@@ -155,6 +155,32 @@ export default class Quote {
 
   /**
    * @param {Discord.Message} message - A message object as defined in discord.js
+   */
+  private searchRandomQuote(message: Discord.Message) {
+    this.Logger.setMethod(this.searchRandomQuote.name);
+
+    this.client.search({
+      index: 'messages',
+      body: esb.requestBodySearch()
+              .query(esb.boolQuery()
+                        .must(esb.termQuery('guild', message.guild.id)))
+    })
+    .then((res) => {
+      const index = Math.floor(Math.random() * res.hits.hits.length);
+
+      const entry: Entry = res.hits.hits[index]._source as Entry;
+      const member: Discord.GuildMember = message.guild.members.get(entry.user);
+      const name: string = isNullOrUndefined(member.nickname) ? member.user.username : member.nickname;
+
+      const quote: string = entry.content + '\n\tt. ' + name;
+
+      message.channel.send(quote)
+        .catch((err) => this.Logger.error(err, 'Search random quote message'));
+    });
+  }
+
+  /**
+   * @param {Discord.Message} message - A message object as defined in discord.js
    * @param {string[]} capitalCmds - Strings containing parameters
    */
   private searchQuote(message: Discord.Message, capitalCmds: string[]) {
@@ -243,7 +269,7 @@ export default class Quote {
           this.searchQuote(message, capitalCmds);
       }
     } else {
-      this.randomQuote(message);
+      this.searchRandomQuote(message);
     }
   }
 
