@@ -162,13 +162,13 @@ export default class Quote {
     this.client.search({
       index: 'messages',
       body: esb.requestBodySearch()
-              .query(esb.boolQuery()
-                        .must(esb.termQuery('guild', message.guild.id)))
+               .query(esb.functionScoreQuery()
+                         .function(esb.randomScoreFunction())
+                         .query(esb.termQuery('guild', message.guild.id)))
+               .size(1)
     })
     .then((res) => {
-      const index = Math.floor(Math.random() * res.hits.hits.length);
-
-      const entry: Entry = res.hits.hits[index]._source as Entry;
+      const entry: Entry = res.hits.hits[0]._source as Entry;
       const member: Discord.GuildMember = message.guild.members.get(entry.user);
       const name: string = isNullOrUndefined(member.nickname) ? member.user.username : member.nickname;
 
@@ -192,14 +192,15 @@ export default class Quote {
     this.client.search({
       index: 'messages',
       body: esb.requestBodySearch()
-              .query(esb.boolQuery()
-                        .must(esb.termQuery('guild', message.guild.id))
-                        .must(esb.termQuery('user', user.id))).toJSON()
+               .query(esb.functionScoreQuery()
+                         .function(esb.randomScoreFunction())
+                         .query(esb.boolQuery()
+                                   .must(esb.termQuery('guild', message.guild.id))
+                                   .must(esb.termQuery('user', user.id))))
+               .size(1)
     })
     .then((res) => {
-      const index = Math.floor(Math.random() * res.hits.hits.length);
-
-      const entry: Entry = res.hits.hits[index]._source as Entry;
+      const entry: Entry = res.hits.hits[0]._source as Entry;
       const member: Discord.GuildMember = message.guild.members.get(entry.user);
       const name: string = isNullOrUndefined(member.nickname) ? member.user.username : member.nickname;
 
